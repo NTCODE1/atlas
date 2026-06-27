@@ -3,6 +3,7 @@ import Header from './components/Header'
 import TabBar from './components/TabBar'
 import type { TabId } from './components/TabBar'
 import Home from './screens/Home'
+import Energy from './screens/Energy'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
@@ -16,9 +17,11 @@ export default function App() {
       >
         <Header />
 
-        {/* Screen region — only Home exists for now */}
+        {/* Screen region */}
         {activeTab === 'home' ? (
           <Home />
+        ) : activeTab === 'energy' ? (
+          <Energy />
         ) : (
           <div className="flex-1 overflow-y-auto px-6" />
         )}
