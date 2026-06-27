@@ -36,6 +36,7 @@ function AtlasMark() {
       viewBox="0 0 1024 684"
       fill="none"
       aria-hidden="true"
+      className="translate-y-[6px]"
     >
       <defs>
         <radialGradient
