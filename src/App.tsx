@@ -4,6 +4,7 @@ import TabBar from './components/TabBar'
 import type { TabId } from './components/TabBar'
 import Home from './screens/Home'
 import Energy from './screens/Energy'
+import Sleep from './screens/Sleep'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
@@ -22,6 +23,8 @@ export default function App() {
           <Home />
         ) : activeTab === 'energy' ? (
           <Energy />
+        ) : activeTab === 'sleep' ? (
+          <Sleep />
         ) : (
           <div className="flex-1 overflow-y-auto px-6" />
         )}

@@ -174,3 +174,59 @@ export function caffeineClearsAt(
   }
   return null
 }
+
+// --- Sleep screen ------------------------------------------------------------
+
+export type SleepStage = 'Awake' | 'REM' | 'Core' | 'Deep'
+
+/** One contiguous span of a single stage, in chronological order. */
+export interface SleepSegment {
+  stage: SleepStage
+  minutes: number
+}
+
+export const sleep = {
+  totalMinutes: 462, // 7h 42m
+  score: 91,
+  bedtime: '23:18',
+  wakeTime: '07:00',
+  deepMinutes: 78,
+  remMinutes: 96,
+  awakeMinutes: 24,
+  lowestRestingHr: 48, // bpm
+}
+
+/**
+ * Hypnogram timeline — segments sum to sleep.totalMinutes (462), and the
+ * per-stage totals match sleep.deepMinutes/remMinutes/awakeMinutes
+ * (Deep 78, REM 96, Awake 24, Core 264).
+ */
+export const sleepStages: SleepSegment[] = [
+  { stage: 'Awake', minutes: 6 },
+  { stage: 'Core', minutes: 40 },
+  { stage: 'Deep', minutes: 38 },
+  { stage: 'Core', minutes: 24 },
+  { stage: 'REM', minutes: 14 },
+  { stage: 'Core', minutes: 30 },
+  { stage: 'Deep', minutes: 28 },
+  { stage: 'Awake', minutes: 4 },
+  { stage: 'Core', minutes: 34 },
+  { stage: 'REM', minutes: 18 },
+  { stage: 'Core', minutes: 30 },
+  { stage: 'Deep', minutes: 12 },
+  { stage: 'Core', minutes: 26 },
+  { stage: 'REM', minutes: 22 },
+  { stage: 'Awake', minutes: 6 },
+  { stage: 'Core', minutes: 50 },
+  { stage: 'REM', minutes: 20 },
+  { stage: 'Awake', minutes: 8 },
+  { stage: 'Core', minutes: 30 },
+  { stage: 'REM', minutes: 22 },
+]
+
+/** 462 -> "7h 42m", 24 -> "24m". */
+export function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
