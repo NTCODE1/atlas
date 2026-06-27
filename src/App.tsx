@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import StatusBar from './components/StatusBar'
 import Header from './components/Header'
 import TabBar from './components/TabBar'
 import type { TabId } from './components/TabBar'
@@ -11,8 +10,10 @@ export default function App() {
   return (
     <div className="flex min-h-full justify-center bg-bg">
       {/* Phone-width column */}
-      <div className="flex h-dvh w-full max-w-[420px] flex-col bg-bg">
-        <StatusBar />
+      <div
+        className="flex h-dvh w-full max-w-[420px] flex-col bg-bg"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <Header />
 
         {/* Screen region — only Home exists for now */}
