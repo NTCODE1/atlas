@@ -1,47 +1,90 @@
-import { formatDuration, formatToday, sleep, sleepStages } from '../data'
-import { useCountUp } from '../hooks/useCountUp'
+import { Heart } from 'lucide-react'
+import { formatSleepStat, sleep, sleepStages } from '../data'
 import Hypnogram from '../components/sleep/Hypnogram'
 import SleepStat from '../components/sleep/SleepStat'
+import SleepScoreRing from '../components/sleep/SleepScoreRing'
+import SleepBalanceCard from '../components/sleep/SleepBalanceCard'
+import BedtimeCard from '../components/sleep/BedtimeCard'
+
+const pct = (minutes: number) => Math.round((minutes / sleep.totalMinutes) * 100)
 
 export default function Sleep() {
-  const score = useCountUp(sleep.score)
+  const hours = Math.floor(sleep.totalMinutes / 60)
+  const mins = sleep.totalMinutes % 60
 
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-6">
       {/* Header */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">Sleep</h1>
-        <p className="mt-0.5 text-text-muted">{formatToday()}</p>
+        <p className="mt-0.5 text-text-muted">Last night</p>
       </div>
 
-      {/* Hero — last night's total + score */}
+      {/* Hero card: total + score ring, hypnogram, stat tiles */}
       <div className="mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
-        <span className="text-[11px] font-medium tracking-wider text-text-muted">LAST NIGHT</span>
-        <div className="mt-1 flex items-end justify-between">
-          <span className="font-display text-[44px] font-bold leading-none text-text">
-            {formatDuration(sleep.totalMinutes)}
-          </span>
-          <div className="flex items-baseline gap-1 pb-1">
-            <span className="font-display text-3xl font-bold leading-none text-mint">{score}</span>
-            <span className="text-sm text-text-muted">score</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-baseline">
+              <span className="font-display text-[48px] font-bold leading-none text-text">
+                {hours}
+              </span>
+              <span className="font-display text-2xl font-bold text-text-muted">h</span>
+              <span className="ml-1.5 font-display text-[48px] font-bold leading-none text-text">
+                {mins}
+              </span>
+              <span className="font-display text-2xl font-bold text-text-muted">m</span>
+            </div>
+            <span className="mt-2 block text-[11px] font-semibold tracking-[0.2em] text-indigo">
+              TOTAL SLEEP
+            </span>
           </div>
-        </div>
-      </div>
 
-      {/* Hypnogram */}
-      <div className="mt-4 rounded-2xl border border-border bg-surface px-4 py-4">
-        <span className="text-[11px] font-medium tracking-wider text-text-muted">SLEEP STAGES</span>
-        <div className="mt-3">
+          <SleepScoreRing score={sleep.score} />
+        </div>
+
+        {/* Hypnogram */}
+        <div className="mt-5 border-t border-border pt-4">
           <Hypnogram segments={sleepStages} />
         </div>
+
+        {/* Stat tiles */}
+        <div className="mt-4 flex gap-2">
+          <SleepStat
+            value={formatSleepStat(sleep.deepMinutes)}
+            name="Deep"
+            percent={pct(sleep.deepMinutes)}
+            accent="indigo"
+          />
+          <SleepStat
+            value={formatSleepStat(sleep.remMinutes)}
+            name="REM"
+            percent={pct(sleep.remMinutes)}
+            accent="indigo"
+          />
+          <SleepStat
+            value={formatSleepStat(sleep.awakeMinutes)}
+            unit="m"
+            name="Awake"
+            percent={pct(sleep.awakeMinutes)}
+            accent="rose"
+          />
+          <SleepStat
+            value={String(sleep.lowestRestingHr)}
+            unit="bpm"
+            name="Low HR"
+            icon={<Heart size={13} strokeWidth={2} className="text-rose" />}
+          />
+        </div>
       </div>
 
-      {/* Stat tiles */}
-      <div className="mt-4 flex gap-2">
-        <SleepStat label="DEEP" value={formatDuration(sleep.deepMinutes)} />
-        <SleepStat label="REM" value={formatDuration(sleep.remMinutes)} />
-        <SleepStat label="AWAKE" value={formatDuration(sleep.awakeMinutes)} />
-        <SleepStat label="LOW HR" value={sleep.lowestRestingHr} unit="bpm" />
+      {/* Sleep balance verdict */}
+      <div className="mt-4">
+        <SleepBalanceCard />
+      </div>
+
+      {/* Bedtime / wake time */}
+      <div className="mt-4">
+        <BedtimeCard />
       </div>
     </div>
   )

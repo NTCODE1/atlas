@@ -1,4 +1,4 @@
-import { sleep, type SleepSegment, type SleepStage } from '../../data'
+import { sleep, timeToHours, formatClock12, type SleepSegment, type SleepStage } from '../../data'
 
 interface HypnogramProps {
   segments: SleepSegment[]
@@ -16,29 +16,52 @@ const PLOT_LEFT = GUTTER_L
 const PLOT_RIGHT = W - PAD_R
 const PLOT_TOP = PAD_T
 const PLOT_BOTTOM = H - PAD_B
+const PLOT_H = PLOT_BOTTOM - PLOT_TOP
 
-// Top -> bottom row order.
-const ROWS: SleepStage[] = ['Awake', 'REM', 'Core', 'Deep']
+// Top -> bottom row order, with each stage's height as a fraction of the plot
+// (taller = more awake). The filled column for a segment rises to this level.
+const ROWS: { stage: SleepStage; level: number }[] = [
+  { stage: 'Awake', level: 1.0 },
+  { stage: 'REM', level: 0.72 },
+  { stage: 'Core', level: 0.46 },
+  { stage: 'Deep', level: 0.18 },
+]
+
+const levelFor = (stage: SleepStage) =>
+  ROWS.find((r) => r.stage === stage)!.level
+
+// Clock fraction across the night (handles the post-midnight wrap).
+const bedAbs = timeToHours(sleep.bedtime)
+const wakeAbs = timeToHours(sleep.wakeTime) + 24
+const MID_TICKS = ['02:00', '05:00'] // hard-coded to match the mockup
 
 export default function Hypnogram({ segments }: HypnogramProps) {
   const total = segments.reduce((sum, s) => sum + s.minutes, 0) || 1
 
-  const rowY = (stage: SleepStage) => {
-    const i = ROWS.indexOf(stage)
-    return PLOT_TOP + (i / (ROWS.length - 1)) * (PLOT_BOTTOM - PLOT_TOP)
-  }
-  const xFor = (minute: number) =>
+  const xForMinute = (minute: number) =>
     PLOT_LEFT + (minute / total) * (PLOT_RIGHT - PLOT_LEFT)
+  const xForClock = (time: string) => {
+    let abs = timeToHours(time)
+    if (abs < bedAbs) abs += 24
+    return PLOT_LEFT + ((abs - bedAbs) / (wakeAbs - bedAbs)) * (PLOT_RIGHT - PLOT_LEFT)
+  }
 
-  // Build the stepped polyline: two points per segment at its row height.
-  const points: string[] = []
+  // Filled column per segment, baseline -> stage level.
+  const columns: { x: number; w: number; y: number; h: number; stage: SleepStage }[] = []
   let cursor = 0
   for (const seg of segments) {
-    const y = rowY(seg.stage).toFixed(1)
-    points.push(`${xFor(cursor).toFixed(1)},${y}`)
+    const x = xForMinute(cursor)
+    const w = xForMinute(cursor + seg.minutes) - x
+    const h = levelFor(seg.stage) * PLOT_H
+    columns.push({ x, w, y: PLOT_BOTTOM - h, h, stage: seg.stage })
     cursor += seg.minutes
-    points.push(`${xFor(cursor).toFixed(1)},${y}`)
   }
+
+  const ticks = [
+    { time: sleep.bedtime, anchor: 'start' as const },
+    ...MID_TICKS.map((time) => ({ time, anchor: 'middle' as const })),
+    { time: sleep.wakeTime, anchor: 'end' as const },
+  ]
 
   return (
     <svg
@@ -47,9 +70,20 @@ export default function Hypnogram({ segments }: HypnogramProps) {
       role="img"
       aria-label="Sleep stages across the night"
     >
+      <defs>
+        <linearGradient id="hyp-indigo" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-indigo)" stopOpacity={0.95} />
+          <stop offset="100%" stopColor="var(--color-indigo)" stopOpacity={0.28} />
+        </linearGradient>
+        <linearGradient id="hyp-rose" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-rose)" stopOpacity={0.95} />
+          <stop offset="100%" stopColor="var(--color-rose)" stopOpacity={0.4} />
+        </linearGradient>
+      </defs>
+
       {/* Row baselines + labels */}
-      {ROWS.map((stage) => {
-        const y = rowY(stage)
+      {ROWS.map(({ stage, level }) => {
+        const y = PLOT_BOTTOM - level * PLOT_H
         return (
           <g key={stage}>
             <line
@@ -73,35 +107,32 @@ export default function Hypnogram({ segments }: HypnogramProps) {
         )
       })}
 
-      {/* Stepped stage line */}
-      <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke="var(--color-indigo)"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {/* Filled stage columns */}
+      {columns.map((c, i) => (
+        <rect
+          key={i}
+          x={c.x}
+          y={c.y}
+          width={Math.max(c.w, 0.5)}
+          height={c.h}
+          rx={1.5}
+          fill={c.stage === 'Awake' ? 'url(#hyp-rose)' : 'url(#hyp-indigo)'}
+        />
+      ))}
 
-      {/* Time labels */}
-      <text
-        x={PLOT_LEFT}
-        y={H - 5}
-        fontSize={9}
-        textAnchor="start"
-        fill="var(--color-text-muted)"
-      >
-        {sleep.bedtime}
-      </text>
-      <text
-        x={PLOT_RIGHT}
-        y={H - 5}
-        fontSize={9}
-        textAnchor="end"
-        fill="var(--color-text-muted)"
-      >
-        {sleep.wakeTime}
-      </text>
+      {/* Time ticks */}
+      {ticks.map(({ time, anchor }) => (
+        <text
+          key={time}
+          x={xForClock(time)}
+          y={H - 5}
+          fontSize={9}
+          textAnchor={anchor}
+          fill="var(--color-text-muted)"
+        >
+          {formatClock12(time)}
+        </text>
+      ))}
     </svg>
   )
 }

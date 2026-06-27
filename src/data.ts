@@ -188,39 +188,46 @@ export interface SleepSegment {
 export const sleep = {
   totalMinutes: 462, // 7h 42m
   score: 91,
-  bedtime: '23:18',
-  wakeTime: '07:00',
-  deepMinutes: 78,
-  remMinutes: 96,
-  awakeMinutes: 24,
-  lowestRestingHr: 48, // bpm
+  bedtime: '23:02', // 11:02 PM
+  wakeTime: '06:55', // 6:55 AM
+  deepMinutes: 78, // 1:18 · 17%
+  remMinutes: 106, // 1:46 · 23%
+  awakeMinutes: 14, // 14m  · 3%
+  coreMinutes: 264, // 57% (derived: 462 - 78 - 106 - 14)
+  lowestRestingHr: 58, // bpm
+}
+
+export const sleepBalance = {
+  label: 'SLEEP BALANCE',
+  title: 'Restorative',
+  text: 'Great mix of deep and REM. Your body and mind got the recovery they needed.',
 }
 
 /**
  * Hypnogram timeline — segments sum to sleep.totalMinutes (462), and the
- * per-stage totals match sleep.deepMinutes/remMinutes/awakeMinutes
- * (Deep 78, REM 96, Awake 24, Core 264).
+ * per-stage totals match the sleep.* fields (Deep 78, REM 106, Awake 14,
+ * Core 264). Deep-heavy early, REM-heavy late, ending in a short REM near wake.
  */
 export const sleepStages: SleepSegment[] = [
-  { stage: 'Awake', minutes: 6 },
-  { stage: 'Core', minutes: 40 },
-  { stage: 'Deep', minutes: 38 },
-  { stage: 'Core', minutes: 24 },
-  { stage: 'REM', minutes: 14 },
+  { stage: 'Awake', minutes: 4 },
+  { stage: 'Core', minutes: 38 },
+  { stage: 'Deep', minutes: 34 },
+  { stage: 'Core', minutes: 22 },
+  { stage: 'REM', minutes: 16 },
   { stage: 'Core', minutes: 30 },
   { stage: 'Deep', minutes: 28 },
-  { stage: 'Awake', minutes: 4 },
+  { stage: 'Awake', minutes: 3 },
   { stage: 'Core', minutes: 34 },
-  { stage: 'REM', minutes: 18 },
-  { stage: 'Core', minutes: 30 },
-  { stage: 'Deep', minutes: 12 },
-  { stage: 'Core', minutes: 26 },
   { stage: 'REM', minutes: 22 },
-  { stage: 'Awake', minutes: 6 },
-  { stage: 'Core', minutes: 50 },
-  { stage: 'REM', minutes: 20 },
-  { stage: 'Awake', minutes: 8 },
-  { stage: 'Core', minutes: 30 },
+  { stage: 'Core', minutes: 26 },
+  { stage: 'Deep', minutes: 16 },
+  { stage: 'Core', minutes: 24 },
+  { stage: 'REM', minutes: 24 },
+  { stage: 'Awake', minutes: 4 },
+  { stage: 'Core', minutes: 44 },
+  { stage: 'REM', minutes: 22 },
+  { stage: 'Awake', minutes: 3 },
+  { stage: 'Core', minutes: 46 },
   { stage: 'REM', minutes: 22 },
 ]
 
@@ -229,4 +236,23 @@ export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+/** Stat-tile time: 78 -> "1:18", 14 -> "14" (caller shows the "m" unit). */
+export function formatSleepStat(minutes: number): string {
+  if (minutes < 60) return String(minutes)
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${h}:${String(m).padStart(2, '0')}`
+}
+
+/** "23:02" -> "11:02 PM"; "02:00" -> "2 AM" (drops :00). */
+export function formatClock12(time: string): string {
+  const [hStr, mStr] = time.split(':')
+  let h = Number(hStr)
+  const m = Number(mStr)
+  const period = h >= 12 ? 'PM' : 'AM'
+  h = h % 12
+  if (h === 0) h = 12
+  return m === 0 ? `${h} ${period}` : `${h}:${String(m).padStart(2, '0')} ${period}`
 }
