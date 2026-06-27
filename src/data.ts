@@ -206,29 +206,33 @@ export const sleepBalance = {
 /**
  * Hypnogram timeline — segments sum to sleep.totalMinutes (462), and the
  * per-stage totals match the sleep.* fields (Deep 78, REM 106, Awake 14,
- * Core 264). Deep-heavy early, REM-heavy late, ending in a short REM near wake.
+ * Core 264). Shape mirrors the mockup: an Awake spike at the start, deep dips
+ * early, REM presence growing later, Awake spikes mid-night and just before
+ * wake (ending on a final spike).
  */
 export const sleepStages: SleepSegment[] = [
-  { stage: 'Awake', minutes: 4 },
+  { stage: 'Awake', minutes: 3 },
   { stage: 'Core', minutes: 38 },
   { stage: 'Deep', minutes: 34 },
+  { stage: 'Core', minutes: 26 },
+  { stage: 'REM', minutes: 14 },
   { stage: 'Core', minutes: 22 },
-  { stage: 'REM', minutes: 16 },
+  { stage: 'REM', minutes: 24 },
+  { stage: 'Awake', minutes: 4 },
   { stage: 'Core', minutes: 30 },
   { stage: 'Deep', minutes: 28 },
-  { stage: 'Awake', minutes: 3 },
-  { stage: 'Core', minutes: 34 },
+  { stage: 'Core', minutes: 24 },
   { stage: 'REM', minutes: 22 },
   { stage: 'Core', minutes: 26 },
   { stage: 'Deep', minutes: 16 },
-  { stage: 'Core', minutes: 24 },
+  { stage: 'Core', minutes: 28 },
   { stage: 'REM', minutes: 24 },
-  { stage: 'Awake', minutes: 4 },
-  { stage: 'Core', minutes: 44 },
-  { stage: 'REM', minutes: 22 },
+  { stage: 'Core', minutes: 18 },
   { stage: 'Awake', minutes: 3 },
-  { stage: 'Core', minutes: 46 },
+  { stage: 'Core', minutes: 22 },
   { stage: 'REM', minutes: 22 },
+  { stage: 'Core', minutes: 30 },
+  { stage: 'Awake', minutes: 4 },
 ]
 
 /** 462 -> "7h 42m", 24 -> "24m". */

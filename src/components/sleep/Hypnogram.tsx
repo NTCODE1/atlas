@@ -9,26 +9,19 @@ const W = 320
 const H = 150
 const GUTTER_L = 40 // room for row labels
 const PAD_R = 6
-const PAD_T = 8
-const PAD_B = 18 // room for the time labels
 
 const PLOT_LEFT = GUTTER_L
 const PLOT_RIGHT = W - PAD_R
-const PLOT_TOP = PAD_T
-const PLOT_BOTTOM = H - PAD_B
-const PLOT_H = PLOT_BOTTOM - PLOT_TOP
+const PLOT_TOP = 14 // top (Awake) row centre
+const PLOT_BOTTOM = 124 // bottom (Deep) row centre
 
-// Top -> bottom row order, with each stage's height as a fraction of the plot
-// (taller = more awake). The filled column for a segment rises to this level.
-const ROWS: { stage: SleepStage; level: number }[] = [
-  { stage: 'Awake', level: 1.0 },
-  { stage: 'REM', level: 0.72 },
-  { stage: 'Core', level: 0.46 },
-  { stage: 'Deep', level: 0.18 },
-]
+const BAR = 9 // capsule thickness
+const RISER = 2.5 // connector thickness
 
-const levelFor = (stage: SleepStage) =>
-  ROWS.find((r) => r.stage === stage)!.level
+// Top -> bottom row order; the ribbon sits AT each stage's row.
+const ROWS: SleepStage[] = ['Awake', 'REM', 'Core', 'Deep']
+const rowY = (stage: SleepStage) =>
+  PLOT_TOP + (ROWS.indexOf(stage) / (ROWS.length - 1)) * (PLOT_BOTTOM - PLOT_TOP)
 
 // Clock fraction across the night (handles the post-midnight wrap).
 const bedAbs = timeToHours(sleep.bedtime)
@@ -46,16 +39,19 @@ export default function Hypnogram({ segments }: HypnogramProps) {
     return PLOT_LEFT + ((abs - bedAbs) / (wakeAbs - bedAbs)) * (PLOT_RIGHT - PLOT_LEFT)
   }
 
-  // Filled column per segment, baseline -> stage level.
-  const columns: { x: number; w: number; y: number; h: number; stage: SleepStage }[] = []
+  // Bars (one capsule per segment) and risers (transitions between segments).
+  const bars: { x: number; w: number; y: number; stage: SleepStage }[] = []
+  const risers: { x: number; y1: number; y2: number }[] = []
   let cursor = 0
-  for (const seg of segments) {
+  segments.forEach((seg, i) => {
     const x = xForMinute(cursor)
     const w = xForMinute(cursor + seg.minutes) - x
-    const h = levelFor(seg.stage) * PLOT_H
-    columns.push({ x, w, y: PLOT_BOTTOM - h, h, stage: seg.stage })
+    bars.push({ x, w, y: rowY(seg.stage), stage: seg.stage })
+    if (i > 0) {
+      risers.push({ x, y1: rowY(segments[i - 1].stage), y2: rowY(seg.stage) })
+    }
     cursor += seg.minutes
-  }
+  })
 
   const ticks = [
     { time: sleep.bedtime, anchor: 'start' as const },
@@ -71,61 +67,102 @@ export default function Hypnogram({ segments }: HypnogramProps) {
       aria-label="Sleep stages across the night"
     >
       <defs>
-        <linearGradient id="hyp-indigo" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-indigo)" stopOpacity={0.95} />
-          <stop offset="100%" stopColor="var(--color-indigo)" stopOpacity={0.28} />
-        </linearGradient>
-        <linearGradient id="hyp-rose" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-rose)" stopOpacity={0.95} />
-          <stop offset="100%" stopColor="var(--color-rose)" stopOpacity={0.4} />
+        {/* Vertical gradient: colour follows the row (Awake red -> Deep blue). */}
+        <linearGradient
+          id="hyp-stage"
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          y1={PLOT_TOP}
+          x2="0"
+          y2={PLOT_BOTTOM}
+        >
+          <stop offset="0%" stopColor="#ff6b81" />
+          <stop offset="30%" stopColor="#c86bff" />
+          <stop offset="60%" stopColor="#7a82ff" />
+          <stop offset="100%" stopColor="#5f9bff" />
         </linearGradient>
       </defs>
 
-      {/* Row baselines + labels */}
-      {ROWS.map(({ stage, level }) => {
-        const y = PLOT_BOTTOM - level * PLOT_H
-        return (
-          <g key={stage}>
-            <line
-              x1={PLOT_LEFT}
-              y1={y}
-              x2={PLOT_RIGHT}
-              y2={y}
-              stroke="var(--color-border)"
-              strokeWidth={1}
-            />
-            <text
-              x={PLOT_LEFT - 8}
-              y={y + 3}
-              fontSize={9}
-              textAnchor="end"
-              fill="var(--color-text-muted)"
-            >
-              {stage}
-            </text>
-          </g>
-        )
-      })}
+      {/* Subtle plot frame */}
+      <rect
+        x={PLOT_LEFT - 3}
+        y={4}
+        width={PLOT_RIGHT - PLOT_LEFT + 6}
+        height={128}
+        rx={12}
+        fill="none"
+        stroke="var(--color-border)"
+        strokeWidth={1}
+        opacity={0.6}
+      />
 
-      {/* Filled stage columns */}
-      {columns.map((c, i) => (
-        <rect
-          key={i}
-          x={c.x}
-          y={c.y}
-          width={Math.max(c.w, 0.5)}
-          height={c.h}
-          rx={1.5}
-          fill={c.stage === 'Awake' ? 'url(#hyp-rose)' : 'url(#hyp-indigo)'}
+      {/* Dashed vertical gridlines at the mid ticks */}
+      {MID_TICKS.map((time) => (
+        <line
+          key={time}
+          x1={xForClock(time)}
+          y1={8}
+          x2={xForClock(time)}
+          y2={128}
+          stroke="var(--color-text-muted)"
+          strokeWidth={1}
+          strokeDasharray="3 4"
+          opacity={0.2}
         />
       ))}
+
+      {/* Row labels */}
+      {ROWS.map((stage) => (
+        <text
+          key={stage}
+          x={PLOT_LEFT - 12}
+          y={rowY(stage) + 3}
+          fontSize={9}
+          textAnchor="end"
+          fill="var(--color-text-muted)"
+        >
+          {stage}
+        </text>
+      ))}
+
+      {/* Ribbon: risers under bars, with a neon glow */}
+      <g
+        style={{
+          filter:
+            'drop-shadow(0 0 3px rgba(150,120,255,0.5)) drop-shadow(0 0 7px rgba(150,120,255,0.3))',
+        }}
+      >
+        {risers.map((r, i) => (
+          <line
+            key={i}
+            x1={r.x}
+            y1={r.y1}
+            x2={r.x}
+            y2={r.y2}
+            stroke="url(#hyp-stage)"
+            strokeWidth={RISER}
+            strokeLinecap="round"
+          />
+        ))}
+        {bars.map((b, i) => (
+          <rect
+            key={i}
+            x={b.x}
+            y={b.y - BAR / 2}
+            width={Math.max(b.w, 2)}
+            height={BAR}
+            rx={BAR / 2}
+            fill="url(#hyp-stage)"
+          />
+        ))}
+      </g>
 
       {/* Time ticks */}
       {ticks.map(({ time, anchor }) => (
         <text
           key={time}
           x={xForClock(time)}
-          y={H - 5}
+          y={H - 4}
           fontSize={9}
           textAnchor={anchor}
           fill="var(--color-text-muted)"
