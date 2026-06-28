@@ -23,12 +23,12 @@ export default function App() {
         {activeTab === 'nutrition' && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-80"
+            className="pointer-events-none absolute inset-x-0 top-0 h-[360px]"
             style={{
               background:
-                'radial-gradient(120% 90% at 82% -10%, rgba(124,58,237,0.30), transparent 55%), radial-gradient(110% 80% at 8% 8%, rgba(20,160,140,0.22), transparent 55%)',
-              maskImage: 'linear-gradient(to bottom, black 55%, transparent)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent)',
+                'radial-gradient(135% 100% at 88% -12%, rgba(139,92,246,0.45), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(26,205,175,0.32), transparent 52%), radial-gradient(90% 70% at 60% 0%, rgba(99,102,241,0.22), transparent 60%)',
+              maskImage: 'linear-gradient(to bottom, black 50%, transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent)',
             }}
           />
         )}

@@ -7,7 +7,8 @@ interface MealTrackerProps {
   onLog: (type: MealType, name: string) => void
 }
 
-const GRADIENT = 'linear-gradient(90deg,#34f5c5,#8a93ff,#ff6b81)'
+const GRADIENT =
+  'linear-gradient(100deg,#34f5c5,#22d3ee,#6366f1,#a855f7,#ec4899,#ff6b81)'
 
 /** "Track your meal" card: gradient-glow input + meal-type pills. */
 export default function MealTracker({ onLog }: MealTrackerProps) {
@@ -32,11 +33,11 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
       <div className="relative mt-4">
         <div
           aria-hidden
-          className="absolute -inset-0.5 rounded-2xl opacity-70 blur-md"
+          className="absolute -inset-1 rounded-[20px] opacity-90 blur-lg"
           style={{ background: GRADIENT }}
         />
-        <div className="relative rounded-2xl p-[1.5px]" style={{ background: GRADIENT }}>
-          <div className="flex items-center rounded-[15px] bg-bg">
+        <div className="relative rounded-2xl p-[2px]" style={{ background: GRADIENT }}>
+          <div className="flex items-center rounded-[14px] bg-bg">
             <input
               type="text"
               value={text}
@@ -49,7 +50,7 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
               type="button"
               onClick={submit}
               aria-label="Log meal"
-              className="mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-text transition-colors hover:bg-white/10"
+              className="mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-surface-2 text-text-muted transition-colors hover:bg-white/10 hover:text-text"
             >
               <Search size={16} strokeWidth={2} />
             </button>
@@ -68,9 +69,9 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
               type="button"
               onClick={() => setType(t)}
               aria-pressed={selected}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none ${
                 selected
-                  ? 'border-mint/40 bg-mint/15 text-mint'
+                  ? 'border-mint/70 bg-mint/15 text-mint'
                   : 'border-border bg-surface-2 text-text-muted hover:text-text'
               }`}
             >
