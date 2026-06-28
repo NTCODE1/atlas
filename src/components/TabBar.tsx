@@ -1,13 +1,14 @@
-import { BookOpen, Dumbbell, Home, Moon, Zap } from 'lucide-react'
+import { BookOpen, Dumbbell, Home, Moon, Utensils, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type TabId = 'home' | 'energy' | 'sleep' | 'training' | 'journal'
+export type TabId = 'home' | 'energy' | 'sleep' | 'training' | 'nutrition' | 'journal'
 
 const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'energy', label: 'Energy', icon: Zap },
   { id: 'sleep', label: 'Sleep', icon: Moon },
   { id: 'training', label: 'Training', icon: Dumbbell },
+  { id: 'nutrition', label: 'Nutrition', icon: Utensils },
   { id: 'journal', label: 'Journal', icon: BookOpen },
 ]
 
@@ -23,11 +24,11 @@ export default function TabBar({ active, onChange }: TabBarProps) {
       className="border-t border-border bg-bg/95 backdrop-blur"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="flex items-stretch justify-around px-2 pt-2 pb-1">
+      <ul className="flex items-stretch overflow-x-auto no-scrollbar px-2 pt-2 pb-1">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = id === active
           return (
-            <li key={id} className="flex-1">
+            <li key={id} className="w-[68px] shrink-0">
               <button
                 type="button"
                 onClick={() => onChange(id)}

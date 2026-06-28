@@ -49,6 +49,15 @@ body {
   border: 1px solid var(--color-border);
 }
 
+/* Hide scrollbars (e.g. the horizontally scrollable tab bar) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Readiness ring sweep-in: arc draws from empty to its target offset on load. */
 @keyframes ring-sweep {
   from {

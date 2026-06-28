@@ -87,6 +87,9 @@ export const hydration = {
   goal: 'of 2.5 L goal',
   filled: 5,
   total: 6,
+  /** Used by the Nutrition hydration card. */
+  goalLitres: 2.5,
+  percent: 64,
 }
 
 export const mood = {
@@ -370,6 +373,65 @@ export const journalSeed: JournalMonth = {
   26: { activity: 'run', entry: { text: 'Tempo run, negative split. Pleased with the legs.', time: '06:50', tag: 'BODY' } },
   27: { entry: { text: 'Shipped the readiness engine. Felt sharp all day — the early run helped.', time: '21:10', tag: 'FOCUS' } },
   28: { activity: 'rest' },
+}
+
+// --- Nutrition screen --------------------------------------------------------
+
+export type MacroColor = 'mint' | 'amber' | 'indigo'
+
+export interface MacroRingData {
+  label: string
+  grams: number
+  target: number
+  color: MacroColor
+}
+
+export const nutrition = {
+  consumed: 1840,
+  target: 2150,
+  unit: 'kcal',
+  macros: [
+    { label: 'Protein', grams: 132, target: 150, color: 'mint' },
+    { label: 'Carbs', grams: 186, target: 220, color: 'amber' },
+    { label: 'Fat', grams: 61, target: 70, color: 'indigo' },
+  ] as MacroRingData[],
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface Meal {
+  id: string
+  type: MealType
+  name: string
+  /** Calories; omitted for raw text-only entries (shown as "—"). */
+  kcal?: number
+}
+
+export const meals: Meal[] = [
+  { id: 'm1', type: 'breakfast', name: 'Eggs, oatmeal, blueberries', kcal: 520 },
+  { id: 'm2', type: 'lunch', name: 'Chicken & rice bowl', kcal: 740 },
+  { id: 'm3', type: 'snack', name: 'Greek yogurt & almonds', kcal: 580 },
+]
+
+export interface Micronutrient {
+  label: string
+  percent: number
+}
+
+export const micronutrients: Micronutrient[] = [
+  { label: 'Vitamin D', percent: 82 },
+  { label: 'Magnesium', percent: 67 },
+  { label: 'Iron', percent: 74 },
+  { label: 'Omega-3', percent: 91 },
+]
+
+/** Time-of-day default meal: <11 breakfast, <15 lunch, <18 snack, else dinner. */
+export function defaultMealType(now = new Date()): MealType {
+  const h = now.getHours()
+  if (h < 11) return 'breakfast'
+  if (h < 15) return 'lunch'
+  if (h < 18) return 'snack'
+  return 'dinner'
 }
 
 // --- Training screen ---------------------------------------------------------
