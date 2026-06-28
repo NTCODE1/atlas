@@ -21,7 +21,7 @@ export default function Training() {
       </div>
 
       {/* Weekly load hero */}
-      <div className="mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
+      <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
         <span className="text-[11px] font-medium tracking-wider text-text-muted">WEEKLY LOAD</span>
         <div className="mt-1 flex items-baseline gap-1">
           <span className="num-glow font-display text-[56px] font-bold leading-none text-text">

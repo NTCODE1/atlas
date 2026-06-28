@@ -3,7 +3,7 @@ import ReadinessRing from '../components/home/ReadinessRing'
 import StatTile from '../components/home/StatTile'
 import FocusCard from '../components/home/FocusCard'
 import ProgressTile from '../components/home/ProgressTile'
-import HydrationTile from '../components/home/HydrationTile'
+import WaterCard from '../components/WaterCard'
 import MoodCard from '../components/home/MoodCard'
 
 export default function Home() {
@@ -18,7 +18,7 @@ export default function Home() {
       </div>
 
       {/* Readiness ring */}
-      <div className="mt-4 rounded-3xl border border-border bg-surface px-4 py-6">
+      <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-4 py-6">
         <ReadinessRing score={readiness.score} label={readiness.label} />
         <p className="mx-auto mt-5 max-w-[18rem] text-center text-sm leading-relaxed text-text-muted">
           {readiness.verdict}
@@ -40,7 +40,7 @@ export default function Home() {
       {/* Deep Work + Hydration */}
       <div className="mt-4 flex gap-3">
         <ProgressTile />
-        <HydrationTile />
+        <WaterCard compact />
       </div>
 
       {/* Current Mood */}

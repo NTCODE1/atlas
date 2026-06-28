@@ -9,7 +9,7 @@ export default function MoodCard() {
         <span className="text-[11px] font-medium tracking-wider text-text-muted">
           {mood.label}
         </span>
-        <h3 className="mt-1 font-display text-xl font-bold text-accent">{mood.value}</h3>
+        <h3 className="mt-1 font-display text-xl font-bold text-indigo">{mood.value}</h3>
       </div>
 
       {/* Wavy line filling the middle space */}
@@ -21,7 +21,7 @@ export default function MoodCard() {
       >
         <path
           d="M0 18 C 20 6, 40 6, 60 16 S 100 30, 120 16 S 150 8, 160 14"
-          stroke="var(--color-accent)"
+          stroke="var(--color-indigo)"
           strokeWidth="2"
           strokeLinecap="round"
           opacity={0.85}

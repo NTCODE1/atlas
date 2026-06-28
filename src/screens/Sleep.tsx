@@ -21,7 +21,7 @@ export default function Sleep() {
       </div>
 
       {/* Hero card: total + score ring, hypnogram, stat tiles */}
-      <div className="mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
+      <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-baseline">

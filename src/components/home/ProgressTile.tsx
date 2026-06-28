@@ -27,8 +27,11 @@ export default function ProgressTile() {
 
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
         <div
-          className="h-full rounded-full bg-accent"
-          style={{ width: `${Math.round(deepWork.progress * 100)}%` }}
+          className="h-full rounded-full"
+          style={{
+            width: `${Math.round(deepWork.progress * 100)}%`,
+            background: 'linear-gradient(90deg, var(--color-accent), var(--color-sky))',
+          }}
         />
       </div>
     </div>

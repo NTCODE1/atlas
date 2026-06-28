@@ -5,7 +5,7 @@ import { useCountUp } from '../hooks/useCountUp'
 import MacroRing from '../components/nutrition/MacroRing'
 import MealTracker from '../components/nutrition/MealTracker'
 import MealsList from '../components/nutrition/MealsList'
-import HydrationCard from '../components/nutrition/HydrationCard'
+import WaterCard from '../components/WaterCard'
 import MicronutrientsCard from '../components/nutrition/MicronutrientsCard'
 
 export default function Nutrition() {
@@ -43,8 +43,11 @@ export default function Nutrition() {
 
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/8">
           <div
-            className="h-full rounded-full bg-accent"
-            style={{ width: `${Math.round(progress * 100)}%` }}
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.round(progress * 100)}%`,
+              background: 'linear-gradient(90deg, var(--color-accent), var(--color-sky))',
+            }}
           />
         </div>
         <span className="mt-2 block text-sm text-text-muted">
@@ -53,7 +56,7 @@ export default function Nutrition() {
       </div>
 
       {/* Macro rings */}
-      <div className="mt-5 flex gap-2 rounded-3xl border border-border bg-surface px-4 py-6">
+      <div className="card-grad mt-5 flex gap-2 rounded-3xl border border-border bg-surface px-4 py-6">
         {nutrition.macros.map((m) => (
           <MacroRing
             key={m.label}
@@ -77,7 +80,7 @@ export default function Nutrition() {
 
       {/* Hydration + Micronutrients */}
       <div className="mt-4 flex gap-3">
-        <HydrationCard />
+        <WaterCard />
         <MicronutrientsCard />
       </div>
     </div>

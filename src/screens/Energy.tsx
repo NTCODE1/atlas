@@ -42,7 +42,7 @@ export default function Energy() {
       </div>
 
       {/* Hero — caffeine in system */}
-      <div className="mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
+      <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
         <span className="text-[11px] font-medium tracking-wider text-text-muted">
           CAFFEINE IN SYSTEM
         </span>
