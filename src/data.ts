@@ -260,3 +260,172 @@ export function formatClock12(time: string): string {
   if (h === 0) h = 12
   return m === 0 ? `${h} ${period}` : `${h}:${String(m).padStart(2, '0')} ${period}`
 }
+
+// --- Journal screen ----------------------------------------------------------
+
+export type JournalActivity = 'run' | 'strength' | 'swim' | 'rest' | 'sleep' | 'journal'
+
+export interface DayEntry {
+  text: string
+  /** "HH:MM" 24-hour. */
+  time: string
+  tag: string
+}
+
+export interface DayRecord {
+  activity?: JournalActivity
+  entry?: DayEntry
+}
+
+/** Editable store: day-of-month -> record, for a single month. */
+export type JournalMonth = Record<number, DayRecord>
+
+export interface GridCell {
+  day: number
+  /** True only for days belonging to the displayed month (editable). */
+  inMonth: boolean
+  isToday: boolean
+}
+
+export interface MonthGrid {
+  year: number
+  monthIndex: number
+  monthLabel: string
+  weeks: GridCell[][]
+}
+
+/** Tag presets offered in the day editor. */
+export const ENTRY_TAGS = ['FOCUS', 'BODY', 'MIND', 'RECOVERY']
+
+/**
+ * Builds a Monday-first calendar grid for the month containing `date`, padded
+ * with the trailing days of the previous month and leading days of the next so
+ * every week is a full row of 7. `inMonth` marks the real month's days; today
+ * is flagged when `date` falls in that month.
+ */
+export function buildMonthGrid(date = new Date()): MonthGrid {
+  const year = date.getFullYear()
+  const monthIndex = date.getMonth()
+  const today = date.getDate()
+
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const daysInPrev = new Date(year, monthIndex, 0).getDate()
+  // Monday-first offset: JS getDay() is 0=Sun .. 6=Sat.
+  const lead = (new Date(year, monthIndex, 1).getDay() + 6) % 7
+
+  const cells: GridCell[] = []
+  for (let i = 0; i < lead; i++) {
+    cells.push({ day: daysInPrev - lead + 1 + i, inMonth: false, isToday: false })
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, inMonth: true, isToday: d === today })
+  }
+  let next = 1
+  while (cells.length % 7 !== 0) {
+    cells.push({ day: next++, inMonth: false, isToday: false })
+  }
+
+  const weeks: GridCell[][] = []
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+
+  return {
+    year,
+    monthIndex,
+    monthLabel: date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+    weeks,
+  }
+}
+
+/** day -> "Friday, Jun 27" for the given month. */
+export function formatEntryDate(year: number, monthIndex: number, day: number): string {
+  return new Date(year, monthIndex, day).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+/**
+ * Seed data for the current month — a plausible spread of activities plus a few
+ * journal entries. Persisted to localStorage on first load, then user-editable.
+ */
+export const journalSeed: JournalMonth = {
+  2: { activity: 'strength' },
+  3: { activity: 'run' },
+  4: { activity: 'swim' },
+  6: { activity: 'rest' },
+  8: { activity: 'strength', entry: { text: 'Heavy squats felt strong — bumped the top set.', time: '18:30', tag: 'BODY' } },
+  9: { activity: 'sleep' },
+  10: { activity: 'run', entry: { text: 'Easy morning run by the river. Legs fresh.', time: '07:15', tag: 'FOCUS' } },
+  11: { activity: 'run' },
+  13: { activity: 'swim' },
+  14: { activity: 'rest' },
+  15: { activity: 'strength' },
+  16: { activity: 'strength' },
+  17: { activity: 'run' },
+  19: { activity: 'swim', entry: { text: 'Long swim — smooth and unhurried.', time: '12:40', tag: 'RECOVERY' } },
+  22: { activity: 'journal', entry: { text: 'Reflected on the quarter. Direction feels clear.', time: '22:05', tag: 'MIND' } },
+  24: { activity: 'strength' },
+  25: { activity: 'run' },
+  26: { activity: 'run', entry: { text: 'Tempo run, negative split. Pleased with the legs.', time: '06:50', tag: 'BODY' } },
+  27: { entry: { text: 'Shipped the readiness engine. Felt sharp all day — the early run helped.', time: '21:10', tag: 'FOCUS' } },
+  28: { activity: 'rest' },
+}
+
+// --- Training screen ---------------------------------------------------------
+
+export interface TrainingDay {
+  /** Single-letter label, Mon–Sun. */
+  label: string
+  /** Daily load in arbitrary units (au); 0 = rest day. */
+  load: number
+  /** Marks the current day (highlighted mint bar). */
+  isToday?: boolean
+}
+
+export const training = {
+  weeklyLoad: 328,
+  unit: 'au',
+  /** Status label beside the number, e.g. "balanced". */
+  status: 'balanced',
+  period: 'This week',
+  /** 7 days Mon–Sun; Saturday is today and the highlighted bar. */
+  days: [
+    { label: 'M', load: 52 },
+    { label: 'T', load: 18 },
+    { label: 'W', load: 74 },
+    { label: 'T', load: 30 },
+    { label: 'F', load: 22 },
+    { label: 'S', load: 86, isToday: true },
+    { label: 'S', load: 46 },
+  ] as TrainingDay[],
+  completedSessions: 2,
+  /** Sessions trend vs last week. */
+  sessionsTrend: '+12%',
+}
+
+export interface UpNextSession {
+  name: string
+  durationMin: number
+  intensity: string
+  distance: string
+  heartRate: string
+  zone: string
+}
+
+/** The next prescribed session from the training plan. */
+export const upNext: UpNextSession = {
+  name: 'Zone-2 Run',
+  durationMin: 45,
+  intensity: 'easy aerobic',
+  distance: '2.6 mi',
+  heartRate: '120–140 bpm',
+  zone: 'Zone 2',
+}
+
+export const todaysTarget = {
+  score: 78,
+  label: 'GOOD',
+  title: 'Adjusted to your readiness',
+  text: 'Readiness was 78 (Good) — your target was scaled to support progression.',
+}
