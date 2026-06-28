@@ -17,9 +17,10 @@
   --color-text-muted: #8a8f9a;
 
   /* Accents */
-  --color-mint: #34f5c5;
-  --color-amber: #ffb155;
-  --color-orange: #e8731f;
+  /* Primary accent — royal blue. accent-bright is used for ring/bar glows. */
+  --color-accent: #2e5bff;
+  --color-accent-bright: #5b82ff;
+  /* Retained: Sleep identity (indigo) and semantic alert/destructive (rose). */
   --color-indigo: #8a93ff;
   --color-rose: #ff6b81;
 
@@ -71,6 +72,9 @@ body {
 .ring-arc {
   stroke-dashoffset: var(--target-offset);
   animation: ring-sweep 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Shape-aware glow that follows the stroke (no boxy filter region). */
+  filter: drop-shadow(0 0 5px rgba(91, 130, 255, 0.55))
+    drop-shadow(0 0 12px rgba(91, 130, 255, 0.35));
 }
 
 @media (prefers-reduced-motion: reduce) {

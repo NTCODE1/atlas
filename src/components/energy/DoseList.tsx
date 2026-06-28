@@ -39,7 +39,7 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? 'Close add dose form' : 'Add a dose'}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-amber/40 bg-amber/10 text-amber transition-colors hover:bg-amber/20"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
         >
           {open ? <X size={15} strokeWidth={2.5} /> : <Plus size={15} strokeWidth={2.5} />}
         </button>
@@ -53,16 +53,16 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
             value={drink}
             onChange={(e) => setDrink(e.target.value)}
             placeholder="Drink (e.g. Cortado)"
-            className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-amber/60 focus:outline-none"
+            className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent/60 focus:outline-none"
           />
           <div className="flex gap-2">
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-amber/60 focus:outline-none"
+              className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent/60 focus:outline-none"
             />
-            <div className="flex flex-1 items-center rounded-lg border border-border bg-bg px-3 focus-within:border-amber/60">
+            <div className="flex flex-1 items-center rounded-lg border border-border bg-bg px-3 focus-within:border-accent/60">
               <input
                 type="number"
                 value={mg}
@@ -76,7 +76,7 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
           <button
             type="button"
             onClick={submit}
-            className="rounded-lg bg-amber py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
+            className="rounded-lg bg-accent py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
           >
             Add dose
           </button>
@@ -93,14 +93,14 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
             key={dose.id}
             className={`flex items-center gap-3 py-2.5 ${i > 0 ? 'border-t border-border' : ''}`}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber/10 text-amber">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent">
               <Coffee size={15} />
             </div>
             <div className="flex flex-1 flex-col">
               <span className="text-sm font-medium text-text">{dose.drink}</span>
               <span className="text-xs text-text-muted">{dose.time}</span>
             </div>
-            <span className="font-display text-sm font-semibold text-amber">
+            <span className="font-display text-sm font-semibold text-accent">
               {dose.mg}
               <span className="ml-0.5 text-xs font-normal text-text-muted">mg</span>
             </span>

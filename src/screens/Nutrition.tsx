@@ -43,7 +43,7 @@ export default function Nutrition() {
 
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/8">
           <div
-            className="h-full rounded-full bg-mint"
+            className="h-full rounded-full bg-accent"
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         </div>

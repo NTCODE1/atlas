@@ -24,7 +24,7 @@ export default function EntryList({ entries, year, monthIndex, onPick, onAdd }: 
           type="button"
           onClick={onAdd}
           aria-label="Add entry for today"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-orange/40 bg-orange/10 text-orange transition-colors hover:bg-orange/20"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
         >
           <Plus size={15} strokeWidth={2.5} />
         </button>
@@ -43,9 +43,9 @@ export default function EntryList({ entries, year, monthIndex, onPick, onAdd }: 
                 key={day}
                 type="button"
                 onClick={() => onPick(day)}
-                className="flex w-full items-start gap-3 rounded-2xl border border-border bg-surface-2 px-4 py-4 text-left transition-colors hover:border-orange/30"
+                className="flex w-full items-start gap-3 rounded-2xl border border-border bg-surface-2 px-4 py-4 text-left transition-colors hover:border-accent/30"
               >
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-orange text-orange">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-accent text-accent">
                   <Icon size={18} strokeWidth={2} />
                 </div>
 
@@ -60,8 +60,8 @@ export default function EntryList({ entries, year, monthIndex, onPick, onAdd }: 
                   </div>
                   <p className="mt-1 text-[15px] leading-snug text-text">{entry.text}</p>
                   <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange" />
-                    <span className="text-xs font-semibold tracking-wide text-orange">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    <span className="text-xs font-semibold tracking-wide text-accent">
                       {entry.tag}
                     </span>
                   </span>

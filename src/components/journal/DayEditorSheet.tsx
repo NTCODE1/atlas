@@ -91,7 +91,7 @@ export default function DayEditorSheet({
                 aria-pressed={selected}
                 className={`grid aspect-square place-items-center rounded-xl border transition-colors ${
                   selected
-                    ? 'border-mint/40 bg-mint/15 text-mint'
+                    ? 'border-accent/40 bg-accent/15 text-accent'
                     : 'border-border bg-surface-2 text-text-muted hover:text-text'
                 }`}
               >
@@ -110,14 +110,14 @@ export default function DayEditorSheet({
           onChange={(e) => setText(e.target.value)}
           rows={3}
           placeholder="What happened today?"
-          className="mt-2 w-full resize-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-mint/60 focus:outline-none"
+          className="mt-2 w-full resize-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent/60 focus:outline-none"
         />
         <div className="mt-2 flex items-center gap-2">
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-mint/60 focus:outline-none"
+            className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent/60 focus:outline-none"
           />
           <div className="flex flex-1 flex-wrap justify-end gap-1.5">
             {ENTRY_TAGS.map((t) => (
@@ -126,7 +126,7 @@ export default function DayEditorSheet({
                 type="button"
                 onClick={() => setTag(t)}
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide transition-colors ${
-                  tag === t ? 'bg-orange/20 text-orange' : 'bg-white/5 text-text-muted'
+                  tag === t ? 'bg-accent/20 text-accent' : 'bg-white/5 text-text-muted'
                 }`}
               >
                 {t}
@@ -140,7 +140,7 @@ export default function DayEditorSheet({
           <button
             type="button"
             onClick={save}
-            className="flex-1 rounded-lg bg-mint py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
+            className="flex-1 rounded-lg bg-accent py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
           >
             Save
           </button>

@@ -48,7 +48,7 @@ export default function Energy() {
         </span>
         <div className="mt-1 flex items-end justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="font-display text-[56px] font-bold leading-none text-amber">
+            <span className="font-display text-[56px] font-bold leading-none text-accent">
               {animatedLevel}
             </span>
             <span className="text-lg text-text-muted">mg</span>
@@ -60,7 +60,7 @@ export default function Energy() {
                 <p className="font-display text-lg font-semibold text-text">{clearsAt}</p>
               </>
             ) : (
-              <p className="font-display text-lg font-semibold text-mint">clear</p>
+              <p className="font-display text-lg font-semibold text-accent">clear</p>
             )}
           </div>
         </div>

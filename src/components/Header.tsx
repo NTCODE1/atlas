@@ -1,7 +1,7 @@
 import { Bell } from 'lucide-react'
 
 /**
- * App header: mint triangular ATLAS logo + wordmark on the left, a notification
+ * App header: accent triangular ATLAS logo + wordmark on the left, a notification
  * bell with an unread dot on the right.
  */
 export default function Header() {
@@ -18,14 +18,14 @@ export default function Header() {
         className="relative grid h-10 w-10 place-items-center rounded-full text-text transition-colors hover:bg-surface"
       >
         <Bell size={22} strokeWidth={1.75} />
-        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-mint ring-2 ring-bg" />
+        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent ring-2 ring-bg" />
       </button>
     </header>
   )
 }
 
 /**
- * The Atlas mark — a glowing geometric mountain logo: a mint-glow center peak
+ * The Atlas mark — a glowing geometric mountain logo: a accent-glow center peak
  * flanked by two snow-white side mountains (the brand logo).
  */
 function AtlasMark() {
@@ -47,10 +47,10 @@ function AtlasMark() {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(512 130) rotate(90) scale(175 155)"
         >
-          <stop offset="0" stopColor="#7CFFE0" stopOpacity="0.85" />
-          <stop offset="0.38" stopColor="#57F5CF" stopOpacity="0.42" />
-          <stop offset="0.68" stopColor="#2FE4BD" stopOpacity="0.16" />
-          <stop offset="1" stopColor="#2FE4BD" stopOpacity="0" />
+          <stop offset="0" stopColor="#8FB2FF" stopOpacity="0.85" />
+          <stop offset="0.38" stopColor="#5B82FF" stopOpacity="0.42" />
+          <stop offset="0.68" stopColor="#2E5BFF" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#2E5BFF" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="atlasMainPeak" x1="512" y1="47" x2="512" y2="392" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#ECFFF9" />
@@ -78,14 +78,14 @@ function AtlasMark() {
           <feColorMatrix
             in="blur"
             type="matrix"
-            values="0 0 0 0 0.38
-                    0 0 0 0 0.97
-                    0 0 0 0 0.84
+            values="0 0 0 0 0.30
+                    0 0 0 0 0.45
+                    0 0 0 0 1.0
                     0 0 0 0.68 0"
-            result="mintBlur"
+            result="accentBlur"
           />
           <feMerge>
-            <feMergeNode in="mintBlur" />
+            <feMergeNode in="accentBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>

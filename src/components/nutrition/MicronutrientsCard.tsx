@@ -6,7 +6,7 @@ export default function MicronutrientsCard() {
   return (
     <div className="flex flex-1 flex-col rounded-3xl border border-border bg-surface px-4 py-4">
       <div className="flex items-center gap-2">
-        <Leaf size={16} className="text-mint" strokeWidth={2} />
+        <Leaf size={16} className="text-accent" strokeWidth={2} />
         <span className="text-sm font-semibold text-text">Micronutrients</span>
       </div>
 
@@ -21,8 +21,8 @@ export default function MicronutrientsCard() {
                 className="h-full rounded-full"
                 style={{
                   width: `${n.percent}%`,
-                  background: 'linear-gradient(90deg,#2bd9ae,#5bffd6)',
-                  boxShadow: '0 0 6px rgba(52,245,197,0.45)',
+                  background: 'linear-gradient(90deg,#2e5bff,#5b82ff)',
+                  boxShadow: '0 0 6px rgba(91,130,255,0.45)',
                 }}
               />
             </div>

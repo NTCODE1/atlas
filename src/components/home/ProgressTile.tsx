@@ -1,7 +1,7 @@
 import { Crosshair } from 'lucide-react'
 import { deepWork } from '../../data'
 
-/** Deep Work tile: value, goal sub-label, and a thin mint progress bar. */
+/** Deep Work tile: value, goal sub-label, and a thin accent progress bar. */
 export default function ProgressTile() {
   return (
     <div className="flex flex-1 flex-col rounded-2xl border border-border bg-surface px-4 py-4">
@@ -27,7 +27,7 @@ export default function ProgressTile() {
 
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
         <div
-          className="h-full rounded-full bg-mint"
+          className="h-full rounded-full bg-accent"
           style={{ width: `${Math.round(deepWork.progress * 100)}%` }}
         />
       </div>

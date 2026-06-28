@@ -29,12 +29,12 @@ export default function DayCell({ cell, record, onPick }: DayCellProps) {
       aria-label={`${cell.day}${activity ? `, ${activity}` : ''}`}
       className={`relative grid aspect-square place-items-center rounded-full transition-colors ${
         Icon ? 'bg-[#ece7d9] text-bg' : 'bg-surface-2 text-text hover:bg-white/10'
-      } ${cell.isToday && !Icon ? 'ring-1 ring-mint/50' : ''}`}
+      } ${cell.isToday && !Icon ? 'ring-1 ring-accent/50' : ''}`}
     >
       {Icon ? <Icon size={20} strokeWidth={2} /> : <span className="text-sm">{cell.day}</span>}
 
       {marked && (
-        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-mint ring-2 ring-bg" />
+        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-bg" />
       )}
     </button>
   )

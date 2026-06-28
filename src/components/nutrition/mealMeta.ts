@@ -11,10 +11,10 @@ interface MealMeta {
 
 /** Single source of truth for meal-type icon, label, and colour. */
 export const MEAL_META: Record<MealType, MealMeta> = {
-  breakfast: { label: 'Breakfast', icon: Sun, color: 'text-amber' },
-  lunch: { label: 'Lunch', icon: SunDim, color: 'text-amber' },
-  dinner: { label: 'Dinner', icon: Moon, color: 'text-indigo' },
-  snack: { label: 'Snack', icon: Apple, color: 'text-mint' },
+  breakfast: { label: 'Breakfast', icon: Sun, color: 'text-text-muted' },
+  lunch: { label: 'Lunch', icon: SunDim, color: 'text-text-muted' },
+  dinner: { label: 'Dinner', icon: Moon, color: 'text-text-muted' },
+  snack: { label: 'Snack', icon: Apple, color: 'text-text-muted' },
 }
 
 export const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']

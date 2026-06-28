@@ -27,7 +27,7 @@ export default function Training() {
           <span className="font-display text-[56px] font-bold leading-none text-text">{load}</span>
           <span className="text-lg text-text-muted">{training.unit}</span>
         </div>
-        <span className="mt-1 block font-display text-base font-semibold text-mint">
+        <span className="mt-1 block font-display text-base font-semibold text-accent">
           {training.status}
         </span>
 

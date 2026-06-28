@@ -9,7 +9,7 @@ export default function UpNextCard() {
 
       <div className="mt-3 flex items-center gap-4">
         {/* Mint session tile with a dark inner dot, mirroring the mockup */}
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-mint">
+        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent">
           <span className="block h-5 w-5 rounded-full bg-bg" />
         </div>
 
@@ -26,11 +26,11 @@ export default function UpNextCard() {
 
       {/* Metrics row */}
       <div className="mt-4 flex items-center gap-6">
-        <span className="flex items-center gap-1.5 text-sm text-mint">
+        <span className="flex items-center gap-1.5 text-sm text-accent">
           <MapPin size={15} strokeWidth={2} />
           {upNext.distance}
         </span>
-        <span className="flex items-center gap-1.5 text-sm text-mint">
+        <span className="flex items-center gap-1.5 text-sm text-accent">
           <Heart size={15} strokeWidth={2} />
           <span>
             {upNext.heartRate}

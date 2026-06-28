@@ -12,7 +12,7 @@ export default function TargetCard() {
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4">
-      {/* Compact mint ring */}
+      {/* Compact accent ring */}
       <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
           <circle
@@ -28,7 +28,7 @@ export default function TargetCard() {
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke="var(--color-mint)"
+            stroke="var(--color-accent)"
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={CIRC}
@@ -39,14 +39,14 @@ export default function TargetCard() {
           <span className="font-display text-lg font-bold leading-none text-text">
             {todaysTarget.score}
           </span>
-          <span className="mt-0.5 text-[8px] font-semibold tracking-[0.15em] text-mint">
+          <span className="mt-0.5 text-[8px] font-semibold tracking-[0.15em] text-accent">
             {todaysTarget.label}
           </span>
         </div>
       </div>
 
       <div className="min-w-0 flex-1">
-        <span className="text-[11px] font-semibold tracking-wider text-mint">TODAY'S TARGET</span>
+        <span className="text-[11px] font-semibold tracking-wider text-accent">TODAY'S TARGET</span>
         <h3 className="mt-0.5 font-display text-base font-bold text-text">{todaysTarget.title}</h3>
         <p className="mt-1 text-xs leading-snug text-text-muted">{todaysTarget.text}</p>
       </div>

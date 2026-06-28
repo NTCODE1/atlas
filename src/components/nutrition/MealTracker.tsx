@@ -25,7 +25,7 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
   return (
     <div className="rounded-3xl border border-border bg-surface px-5 py-5">
       <div className="flex items-center gap-2">
-        <UtensilsCrossed size={18} className="text-mint" strokeWidth={2} />
+        <UtensilsCrossed size={18} className="text-accent" strokeWidth={2} />
         <span className="font-display text-lg font-semibold text-text">Track your meal</span>
       </div>
 
@@ -71,7 +71,7 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
               aria-pressed={selected}
               className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none ${
                 selected
-                  ? 'border-mint/70 bg-mint/15 text-mint'
+                  ? 'border-accent/70 bg-accent/15 text-accent'
                   : 'border-border bg-surface-2 text-text-muted hover:text-text'
               }`}
             >

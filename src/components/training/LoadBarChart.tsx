@@ -11,7 +11,7 @@ interface LoadBarChartProps {
 
 /**
  * 7-day training-load bar chart (Mon–Sun). Bars scale to the week's peak load;
- * today's bar is mint with a soft glow and a chevron beneath, others are dimmed.
+ * today's bar is accent with a soft glow and a chevron beneath, others are dimmed.
  */
 export default function LoadBarChart({ days }: LoadBarChartProps) {
   const max = Math.max(...days.map((d) => d.load), 1)
@@ -26,7 +26,7 @@ export default function LoadBarChart({ days }: LoadBarChartProps) {
               <div
                 className={`w-full max-w-[22px] rounded-md ${
                   day.isToday
-                    ? 'bg-mint shadow-[0_0_16px_rgba(52,245,197,0.45)]'
+                    ? 'bg-accent shadow-[0_0_16px_rgba(91,130,255,0.45)]'
                     : 'bg-white/10'
                 }`}
                 style={{ height: h }}
@@ -34,13 +34,13 @@ export default function LoadBarChart({ days }: LoadBarChartProps) {
             </div>
             <span
               className={`mt-2 text-[11px] font-medium ${
-                day.isToday ? 'text-mint' : 'text-text-muted'
+                day.isToday ? 'text-accent' : 'text-text-muted'
               }`}
             >
               {day.label}
             </span>
             {day.isToday ? (
-              <ChevronDown size={12} strokeWidth={2.5} className="mt-0.5 text-mint" />
+              <ChevronDown size={12} strokeWidth={2.5} className="mt-0.5 text-accent" />
             ) : (
               <span className="mt-0.5 block h-3" />
             )}

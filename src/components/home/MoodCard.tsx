@@ -1,7 +1,7 @@
 import { Smile } from 'lucide-react'
 import { mood } from '../../data'
 
-/** Current Mood card: label, mint value, a decorative wavy line, and an emoji button. */
+/** Current Mood card: label, accent value, a decorative wavy line, and an emoji button. */
 export default function MoodCard() {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border bg-surface px-4 py-4">
@@ -9,7 +9,7 @@ export default function MoodCard() {
         <span className="text-[11px] font-medium tracking-wider text-text-muted">
           {mood.label}
         </span>
-        <h3 className="mt-1 font-display text-xl font-bold text-mint">{mood.value}</h3>
+        <h3 className="mt-1 font-display text-xl font-bold text-accent">{mood.value}</h3>
       </div>
 
       {/* Wavy line filling the middle space */}
@@ -21,7 +21,7 @@ export default function MoodCard() {
       >
         <path
           d="M0 18 C 20 6, 40 6, 60 16 S 100 30, 120 16 S 150 8, 160 14"
-          stroke="var(--color-mint)"
+          stroke="var(--color-accent)"
           strokeWidth="2"
           strokeLinecap="round"
           opacity={0.85}

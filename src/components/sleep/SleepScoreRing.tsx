@@ -12,7 +12,7 @@ const CIRC = 2 * Math.PI * RADIUS
 
 /**
  * Compact indigo score donut. Mirrors ReadinessRing but smaller and in indigo:
- * reuses the shared `.ring-arc` sweep animation, overriding its (mint) glow
+ * reuses the shared `.ring-arc` sweep animation, overriding its (accent) glow
  * with an inline indigo drop-shadow so no global CSS change is needed.
  */
 export default function SleepScoreRing({ score }: SleepScoreRingProps) {

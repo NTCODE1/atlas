@@ -17,7 +17,7 @@ interface TabBarProps {
   onChange: (id: TabId) => void
 }
 
-/** Bottom tab bar with 5 destinations. Active tab renders in mint. */
+/** Bottom tab bar with 5 destinations. Active tab renders in accent. */
 export default function TabBar({ active, onChange }: TabBarProps) {
   return (
     <nav
@@ -34,7 +34,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                 onClick={() => onChange(id)}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex w-full flex-col items-center gap-1 rounded-xl py-1.5 transition-colors ${
-                  isActive ? 'text-mint' : 'text-text-muted hover:text-text'
+                  isActive ? 'text-accent' : 'text-text-muted hover:text-text'
                 }`}
               >
                 <Icon size={22} strokeWidth={isActive ? 2.25 : 1.75} />

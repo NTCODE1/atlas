@@ -64,8 +64,8 @@ export default function CaffeineChart({ doses, nowHour }: CaffeineChartProps) {
     >
       <defs>
         <linearGradient id="caffeine-area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-amber)" stopOpacity={0.35} />
-          <stop offset="100%" stopColor="var(--color-amber)" stopOpacity={0} />
+          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.35} />
+          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
         </linearGradient>
       </defs>
 
@@ -84,7 +84,7 @@ export default function CaffeineChart({ doses, nowHour }: CaffeineChartProps) {
       <polyline
         points={linePoints.join(' ')}
         fill="none"
-        stroke="var(--color-amber)"
+        stroke="var(--color-accent)"
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -151,7 +151,7 @@ export default function CaffeineChart({ doses, nowHour }: CaffeineChartProps) {
         cx={xFor(nowClamped)}
         cy={yFor(caffeineLevelAt(doses, nowClamped))}
         r={4.5}
-        fill="var(--color-amber)"
+        fill="var(--color-accent)"
         stroke="var(--color-surface)"
         strokeWidth={2}
       />
@@ -166,7 +166,7 @@ export default function CaffeineChart({ doses, nowHour }: CaffeineChartProps) {
             cx={xFor(h)}
             cy={yFor(caffeineLevelAt(doses, h))}
             r={3}
-            fill="var(--color-amber)"
+            fill="var(--color-accent)"
             stroke="var(--color-surface)"
             strokeWidth={1.5}
           />
