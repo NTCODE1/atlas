@@ -9,6 +9,21 @@ import Training from './screens/Training'
 import Nutrition from './screens/Nutrition'
 import Journal from './screens/Journal'
 
+/** Per-page ambient top gradient — varied shades of blue for visual interest. */
+const TAB_GRADIENTS: Record<TabId, string> = {
+  home: 'radial-gradient(135% 100% at 85% -12%, rgba(46,91,255,0.40), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(0,164,255,0.26), transparent 52%)',
+  energy:
+    'radial-gradient(135% 100% at 88% -12%, rgba(0,164,255,0.36), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(0,231,255,0.24), transparent 52%)',
+  sleep:
+    'radial-gradient(135% 100% at 85% -12%, rgba(138,147,255,0.34), transparent 55%), radial-gradient(120% 95% at 6% -6%, rgba(4,4,74,0.55), transparent 50%)',
+  training:
+    'radial-gradient(135% 100% at 88% -12%, rgba(46,91,255,0.38), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(0,231,255,0.22), transparent 52%)',
+  nutrition:
+    'radial-gradient(135% 100% at 88% -12%, rgba(46,91,255,0.40), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(0,164,255,0.28), transparent 52%), radial-gradient(90% 70% at 60% 0%, rgba(103,186,244,0.20), transparent 60%)',
+  journal:
+    'radial-gradient(135% 100% at 85% -12%, rgba(103,186,244,0.32), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(30,70,107,0.45), transparent 52%)',
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
 
@@ -19,19 +34,16 @@ export default function App() {
         className="relative flex h-dvh w-full max-w-[420px] flex-col overflow-hidden bg-bg"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {/* Ambient colour glow behind the Nutrition header */}
-        {activeTab === 'nutrition' && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[360px]"
-            style={{
-              background:
-                'radial-gradient(135% 100% at 88% -12%, rgba(139,92,246,0.45), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(26,205,175,0.32), transparent 52%), radial-gradient(90% 70% at 60% 0%, rgba(99,102,241,0.22), transparent 60%)',
-              maskImage: 'linear-gradient(to bottom, black 50%, transparent)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent)',
-            }}
-          />
-        )}
+        {/* Ambient blue glow behind each page's header */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[360px]"
+          style={{
+            background: TAB_GRADIENTS[activeTab],
+            maskImage: 'linear-gradient(to bottom, black 50%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent)',
+          }}
+        />
 
         <Header />
 

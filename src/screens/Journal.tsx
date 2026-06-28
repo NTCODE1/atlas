@@ -54,7 +54,7 @@ export default function Journal() {
     })
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Header */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">
@@ -66,11 +66,11 @@ export default function Journal() {
       <div className="mt-4 flex gap-12">
         <div>
           <span className="text-sm text-text-muted">Your Streak</span>
-          <p className="mt-0.5 font-display text-2xl font-bold text-text">{streak} Weeks</p>
+          <p className="mt-0.5 num-glow font-display text-2xl font-bold text-text">{streak} Weeks</p>
         </div>
         <div>
           <span className="text-sm text-text-muted">Journal Entries</span>
-          <p className="mt-0.5 font-display text-2xl font-bold text-text">{entryCount}</p>
+          <p className="mt-0.5 num-glow font-display text-2xl font-bold text-text">{entryCount}</p>
         </div>
       </div>
 

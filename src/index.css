@@ -20,6 +20,11 @@
   /* Primary accent — royal blue. accent-bright is used for ring/bar glows. */
   --color-accent: #2e5bff;
   --color-accent-bright: #5b82ff;
+  /* Secondary blues (sparing highlights + page gradients). */
+  --color-sky: #00a4ff;
+  --color-cyan: #00e7ff;
+  --color-royal: #1e466b;
+  --color-navy: #04044a;
   /* Retained: Sleep identity (indigo) and semantic alert/destructive (rose). */
   --color-indigo: #8a93ff;
   --color-rose: #ff6b81;
@@ -48,6 +53,13 @@ body {
 /* Hairline border helper */
 .hairline {
   border: 1px solid var(--color-border);
+}
+
+/* Subtle cool glow for big hero numbers. */
+.num-glow {
+  text-shadow:
+    0 0 18px rgba(91, 130, 255, 0.3),
+    0 0 4px rgba(91, 130, 255, 0.18);
 }
 
 /* Hide scrollbars (e.g. the horizontally scrollable tab bar) */

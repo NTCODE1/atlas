@@ -14,7 +14,12 @@ export default function TargetCard() {
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4">
       {/* Compact accent ring */}
       <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
+        <svg
+          width={SIZE}
+          height={SIZE}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          className="-rotate-90 overflow-visible"
+        >
           <circle
             cx={SIZE / 2}
             cy={SIZE / 2}
@@ -33,6 +38,7 @@ export default function TargetCard() {
             strokeLinecap="round"
             strokeDasharray={CIRC}
             strokeDashoffset={offset}
+            style={{ filter: 'drop-shadow(0 0 5px rgba(91,130,255,0.5))' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

@@ -68,7 +68,9 @@ export default function SleepScoreRing({ score }: SleepScoreRingProps) {
 
       {/* Centre label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-[34px] font-bold leading-none text-text">{count}</span>
+        <span className="num-glow font-display text-[34px] font-bold leading-none text-text">
+          {count}
+        </span>
         <span className="mt-1 font-display text-[10px] font-semibold tracking-[0.32em] text-indigo">
           SCORE
         </span>

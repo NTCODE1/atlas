@@ -28,8 +28,8 @@ export default function HydrationTile() {
             <Droplet
               key={i}
               size={16}
-              className={filled ? 'text-accent' : 'text-white/15'}
-              fill={filled ? 'var(--color-accent)' : 'none'}
+              className={filled ? 'text-sky' : 'text-white/15'}
+              fill={filled ? 'var(--color-sky)' : 'none'}
               strokeWidth={filled ? 0 : 1.5}
             />
           )

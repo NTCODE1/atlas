@@ -20,7 +20,7 @@ export default function Nutrition() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Header + calorie hero */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">Nutrition</h1>
@@ -33,7 +33,7 @@ export default function Nutrition() {
         </button>
 
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="font-display text-[52px] font-bold leading-none text-text">
+          <span className="num-glow font-display text-[52px] font-bold leading-none text-text">
             {consumed.toLocaleString()}
           </span>
           <span className="text-lg text-text-muted">

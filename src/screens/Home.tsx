@@ -8,7 +8,7 @@ import MoodCard from '../components/home/MoodCard'
 
 export default function Home() {
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Greeting */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">

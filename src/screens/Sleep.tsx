@@ -13,7 +13,7 @@ export default function Sleep() {
   const mins = sleep.totalMinutes % 60
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Header */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">Sleep</h1>
@@ -25,11 +25,11 @@ export default function Sleep() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-baseline">
-              <span className="font-display text-[48px] font-bold leading-none text-text">
+              <span className="num-glow font-display text-[48px] font-bold leading-none text-text">
                 {hours}
               </span>
               <span className="font-display text-2xl font-bold text-text-muted">h</span>
-              <span className="ml-1.5 font-display text-[48px] font-bold leading-none text-text">
+              <span className="num-glow ml-1.5 font-display text-[48px] font-bold leading-none text-text">
                 {mins}
               </span>
               <span className="font-display text-2xl font-bold text-text-muted">m</span>

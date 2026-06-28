@@ -40,7 +40,7 @@ export default function StatTile({ stat }: { stat: Stat }) {
 
       <div className="mt-1 flex items-center justify-between">
         {stat.trend ? (
-          <span className="flex items-center gap-0.5 text-xs font-medium text-accent">
+          <span className="flex items-center gap-0.5 text-xs font-medium text-sky">
             <TrendIcon size={12} strokeWidth={2.5} />
             {stat.trend}
           </span>
@@ -52,7 +52,7 @@ export default function StatTile({ stat }: { stat: Stat }) {
           <polyline
             points={sparkPoints(stat.spark, 40, 16)}
             fill="none"
-            stroke="var(--color-accent)"
+            stroke="var(--color-sky)"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"

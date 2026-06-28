@@ -16,7 +16,7 @@ export default function SessionsSummary() {
         <p className="text-sm font-medium text-text">
           {training.completedSessions} completed sessions this week
         </p>
-        <p className="text-xs font-medium text-accent">{training.sessionsTrend} vs last week</p>
+        <p className="text-xs font-medium text-sky">{training.sessionsTrend} vs last week</p>
       </div>
 
       <ChevronRight size={20} className="shrink-0 text-text-muted" />

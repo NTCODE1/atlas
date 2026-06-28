@@ -69,7 +69,7 @@ export default function ReadinessRing({ score, label }: ReadinessRingProps) {
 
       {/* Centre label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-[68px] font-bold leading-none text-text">
+        <span className="num-glow font-display text-[68px] font-bold leading-none text-text">
           {count}
         </span>
         <span className="mt-2 font-display text-sm font-semibold tracking-[0.32em] text-accent">

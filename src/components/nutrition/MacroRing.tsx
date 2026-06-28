@@ -65,7 +65,7 @@ export default function MacroRing({ label, grams, target, color }: MacroRingProp
         </svg>
 
         <div className="absolute inset-0 grid place-items-center">
-          <span className="font-display text-xl font-bold text-text">{count}g</span>
+          <span className="num-glow font-display text-xl font-bold text-text">{count}g</span>
         </div>
       </div>
 

@@ -10,7 +10,7 @@ export default function Training() {
   const load = useCountUp(training.weeklyLoad)
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Header */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">Training</h1>
@@ -24,10 +24,12 @@ export default function Training() {
       <div className="mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
         <span className="text-[11px] font-medium tracking-wider text-text-muted">WEEKLY LOAD</span>
         <div className="mt-1 flex items-baseline gap-1">
-          <span className="font-display text-[56px] font-bold leading-none text-text">{load}</span>
+          <span className="num-glow font-display text-[56px] font-bold leading-none text-text">
+            {load}
+          </span>
           <span className="text-lg text-text-muted">{training.unit}</span>
         </div>
-        <span className="mt-1 block font-display text-base font-semibold text-accent">
+        <span className="mt-1 block font-display text-base font-semibold text-sky">
           {training.status}
         </span>
 

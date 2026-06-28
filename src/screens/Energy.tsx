@@ -34,7 +34,7 @@ export default function Energy() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 overflow-y-auto px-6 pb-28">
       {/* Header */}
       <div className="pt-1">
         <h1 className="font-display text-[32px] font-bold leading-tight text-text">Energy</h1>
@@ -48,7 +48,7 @@ export default function Energy() {
         </span>
         <div className="mt-1 flex items-end justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="font-display text-[56px] font-bold leading-none text-accent">
+            <span className="num-glow font-display text-[56px] font-bold leading-none text-accent">
               {animatedLevel}
             </span>
             <span className="text-lg text-text-muted">mg</span>
