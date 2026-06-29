@@ -9,6 +9,7 @@ import {
   type CaffeineDose,
 } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
+import { useHealth } from '../api/healthContext'
 import CaffeineChart from '../components/energy/CaffeineChart'
 import DoseList from '../components/energy/DoseList'
 
@@ -18,10 +19,15 @@ function currentHour(): number {
 }
 
 export default function Energy() {
+  const { health } = useHealth()
   const [doses, setDoses] = useState<CaffeineDose[]>(caffeineDoses)
 
   const nowHour = currentHour()
-  const level = Math.round(caffeineLevelAt(doses, nowHour))
+  // Live total caffeine (mg) when available, else the decayed level from doses.
+  const level =
+    health.caffeineMg != null
+      ? Math.round(health.caffeineMg)
+      : Math.round(caffeineLevelAt(doses, nowHour))
   const animatedLevel = useCountUp(level)
 
   const clearHour = caffeineClearsAt(doses)

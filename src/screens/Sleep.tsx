@@ -1,5 +1,6 @@
 import { Heart } from 'lucide-react'
 import { formatSleepStat, sleep, sleepStages } from '../data'
+import { useHealth } from '../api/healthContext'
 import Hypnogram from '../components/sleep/Hypnogram'
 import SleepStat from '../components/sleep/SleepStat'
 import SleepScoreRing from '../components/sleep/SleepScoreRing'
@@ -9,8 +10,13 @@ import BedtimeCard from '../components/sleep/BedtimeCard'
 const pct = (minutes: number) => Math.round((minutes / sleep.totalMinutes) * 100)
 
 export default function Sleep() {
-  const hours = Math.floor(sleep.totalMinutes / 60)
-  const mins = sleep.totalMinutes % 60
+  const { health } = useHealth()
+
+  // Live total sleep + resting HR, falling back to hard-coded values per field.
+  const totalMin = health.sleepTotalMinutes ?? sleep.totalMinutes
+  const hours = Math.floor(totalMin / 60)
+  const mins = totalMin % 60
+  const lowHr = Math.round(health.restingHeartRate ?? sleep.lowestRestingHr)
 
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-28">
@@ -69,7 +75,7 @@ export default function Sleep() {
             accent="rose"
           />
           <SleepStat
-            value={String(sleep.lowestRestingHr)}
+            value={String(lowHr)}
             unit="bpm"
             name="Low HR"
             icon={<Heart size={13} strokeWidth={2} className="text-rose" />}

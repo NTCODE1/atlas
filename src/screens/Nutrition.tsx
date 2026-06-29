@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Flame } from 'lucide-react'
 import { meals as seedMeals, nutrition, type Meal, type MealType } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
+import { useHealth } from '../api/healthContext'
 import MacroRing from '../components/nutrition/MacroRing'
 import MealTracker from '../components/nutrition/MealTracker'
 import MealsList from '../components/nutrition/MealsList'
@@ -9,6 +10,7 @@ import WaterCard from '../components/WaterCard'
 import MicronutrientsCard from '../components/nutrition/MicronutrientsCard'
 
 export default function Nutrition() {
+  const { health } = useHealth()
   const [meals, setMeals] = useState<Meal[]>(seedMeals)
   const consumed = useCountUp(nutrition.consumed, 1200)
 
@@ -53,6 +55,14 @@ export default function Nutrition() {
         <span className="mt-2 block text-sm text-text-muted">
           {remaining.toLocaleString()} {nutrition.unit} remaining
         </span>
+
+        {/* Live active energy burned (only shown when synced from the API). */}
+        {health.activeEnergyKcal != null && (
+          <span className="mt-1 flex items-center gap-1 text-sm text-text-muted">
+            <Flame size={14} strokeWidth={2} className="text-accent" />
+            {Math.round(health.activeEnergyKcal).toLocaleString()} {nutrition.unit} burned
+          </span>
+        )}
       </div>
 
       {/* Macro rings */}

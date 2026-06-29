@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { hydration } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
+import { useHealth } from '../api/healthContext'
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -19,7 +20,14 @@ interface WaterCardProps {
  * on mount with two looping wave layers, the percentage shown big on top.
  */
 export default function WaterCard({ compact = false }: WaterCardProps) {
-  const percent = hydration.percent
+  const { health } = useHealth()
+
+  // Live hydration litres when available, else the hard-coded value.
+  const litres = health.hydrationLitres ?? Number(hydration.value)
+  const percent =
+    health.hydrationLitres != null
+      ? Math.max(0, Math.min(100, Math.round((litres / hydration.goalLitres) * 100)))
+      : hydration.percent
   const count = useCountUp(percent, 1200)
   const [level, setLevel] = useState(() => (prefersReducedMotion() ? percent : 0))
 
@@ -74,7 +82,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
           </span>
         </div>
         <span className="text-xs text-text-muted">
-          {hydration.value} of {hydration.goalLitres} {hydration.unit}
+          {litres.toFixed(1)} of {hydration.goalLitres} {hydration.unit}
         </span>
       </div>
     </div>

@@ -22,6 +22,63 @@ export const readiness = {
   verdict: 'HRV up, well slept, caffeine clear — a good day to push the hard session.',
 }
 
+/**
+ * Readiness scoring formula. Blends four daily signals into a 0–100 score,
+ * used by the Home ring when live values are available (else `readiness.score`).
+ *
+ * Each signal is normalized to a 0–100 sub-score against a target/range, then
+ * combined with the weights below. Tweak the targets and weights freely — this
+ * is a sensible starting point, not a clinical model.
+ */
+export const READINESS = {
+  /** Sub-score weights (should sum to 1). */
+  weights: { hrv: 0.35, sleep: 0.35, restingHr: 0.2, caffeine: 0.1 },
+  /** HRV (ms) that scores 100; higher is better. */
+  hrvTargetMs: 80,
+  /** Sleep (minutes) that scores 100; higher is better. 480 = 8h. */
+  sleepTargetMin: 480,
+  /** Resting HR band (bpm): restingHrBest scores 100, restingHrWorst scores 0. */
+  restingHrBest: 48,
+  restingHrWorst: 75,
+  /** Caffeine (mg) at which the caffeine sub-score hits 0; 0 mg scores 100. */
+  caffeineZeroMg: 400,
+}
+
+const clamp01to100 = (n: number) => Math.max(0, Math.min(100, n))
+
+/**
+ * Compute a 0–100 readiness score from live daily metrics. All four inputs are
+ * required; the caller should fall back to `readiness.score` if any are missing.
+ */
+export function computeReadiness(input: {
+  hrv: number
+  sleepMinutes: number
+  restingHr: number
+  caffeineMg: number
+}): number {
+  const { weights: w } = READINESS
+
+  // HRV: higher is better, capped at the target.
+  const hrvScore = clamp01to100((input.hrv / READINESS.hrvTargetMs) * 100)
+  // Sleep: more is better, capped at the target.
+  const sleepScore = clamp01to100((input.sleepMinutes / READINESS.sleepTargetMin) * 100)
+  // Resting HR: lower is better, mapped across the best→worst band (inverted).
+  const rhrScore = clamp01to100(
+    ((READINESS.restingHrWorst - input.restingHr) /
+      (READINESS.restingHrWorst - READINESS.restingHrBest)) *
+      100,
+  )
+  // Caffeine: less residual is better; 0 mg → 100, caffeineZeroMg → 0.
+  const caffeineScore = clamp01to100(100 - (input.caffeineMg / READINESS.caffeineZeroMg) * 100)
+
+  return Math.round(
+    hrvScore * w.hrv +
+      sleepScore * w.sleep +
+      rhrScore * w.restingHr +
+      caffeineScore * w.caffeine,
+  )
+}
+
 export interface Stat {
   label: string
   value: string
