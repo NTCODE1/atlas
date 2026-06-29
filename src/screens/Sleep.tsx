@@ -7,16 +7,20 @@ import SleepScoreRing from '../components/sleep/SleepScoreRing'
 import SleepBalanceCard from '../components/sleep/SleepBalanceCard'
 import BedtimeCard from '../components/sleep/BedtimeCard'
 
-const pct = (minutes: number) => Math.round((minutes / sleep.totalMinutes) * 100)
-
 export default function Sleep() {
   const { health } = useHealth()
 
-  // Live total sleep + resting HR, falling back to hard-coded values per field.
+  // Live sleep values, falling back to hard-coded data.ts values per field.
   const totalMin = health.sleepTotalMinutes ?? sleep.totalMinutes
+  const deepMin = health.sleepDeepMinutes ?? sleep.deepMinutes
+  const remMin = health.sleepRemMinutes ?? sleep.remMinutes
+  const awakeMin = health.sleepAwakeMinutes ?? sleep.awakeMinutes
+  const lowHr = Math.round(health.restingHeartRate ?? sleep.lowestRestingHr)
+
   const hours = Math.floor(totalMin / 60)
   const mins = totalMin % 60
-  const lowHr = Math.round(health.restingHeartRate ?? sleep.lowestRestingHr)
+  // Stage percentages relative to the (live or fallback) total sleep.
+  const pct = (minutes: number) => (totalMin > 0 ? Math.round((minutes / totalMin) * 100) : 0)
 
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-28">
@@ -56,22 +60,22 @@ export default function Sleep() {
         {/* Stat tiles */}
         <div className="mt-4 flex gap-2">
           <SleepStat
-            value={formatSleepStat(sleep.deepMinutes)}
+            value={formatSleepStat(deepMin)}
             name="Deep"
-            percent={pct(sleep.deepMinutes)}
+            percent={pct(deepMin)}
             accent="indigo"
           />
           <SleepStat
-            value={formatSleepStat(sleep.remMinutes)}
+            value={formatSleepStat(remMin)}
             name="REM"
-            percent={pct(sleep.remMinutes)}
+            percent={pct(remMin)}
             accent="indigo"
           />
           <SleepStat
-            value={formatSleepStat(sleep.awakeMinutes)}
+            value={formatSleepStat(awakeMin)}
             unit="m"
             name="Awake"
-            percent={pct(sleep.awakeMinutes)}
+            percent={pct(awakeMin)}
             accent="rose"
           />
           <SleepStat
