@@ -10,19 +10,26 @@
  *           "data": [ { "date": "...", "Avg": 62, "Min": 54, "Max": 130 } ] },
  *         { "name": "step_count", "units": "count",
  *           "data": [ { "date": "...", "qty": 8231 } ] },
+ *         { "name": "sleep_analysis", "units": "hr",
+ *           "data": [ { "date": "...", "totalSleep": 7.7, "inBed": 8.1,
+ *                       "deep": 1.3, "core": 4.4, "rem": 1.8, "awake": 0.2 } ] },
+ *         { "name": "active_energy", "units": "kJ",
+ *           "data": [ { "date": "...", "qty": 1830 } ] },
  *         ...
  *       ]
  *     }
  *   }
  *
- * Each metric carries an array of aggregated data points. Instantaneous metrics
- * (heart rate, HRV) expose Avg/Min/Max per point; cumulative metrics (steps,
- * caffeine, water, energy) expose a `qty` total per point.
+ * Field/unit notes for the real payload:
+ * - heart_rate exposes aggregated Avg/Min/Max (capitalized) per point.
+ * - sleep_analysis values are in HOURS, as named fields (totalSleep, inBed,
+ *   deep, core, rem, awake) — not seconds, not a single qty.
+ * - active_energy is in kJ (converted to kcal below).
+ * - cumulative metrics (steps, caffeine, water) expose a `qty` total per point.
  *
  * Per-field fallback: HAE only sends the metrics you enable in the app, so any
- * metric that's absent maps to `null`. Calling code should substitute the
- * hard-coded data.ts value for just that field, rather than discarding the
- * whole payload.
+ * metric that's absent maps to `null`. Calling code substitutes the hard-coded
+ * data.ts value for just that field, rather than discarding the whole payload.
  */
 
 /** One aggregated data point inside a metric. Fields vary by metric type. */
@@ -32,13 +39,22 @@ interface MetricDataPoint {
   qty?: number
   /** Aggregated average for instantaneous metrics (heart rate, HRV). */
   Avg?: number
-  /** Aggregated minimum (e.g. lowest heart rate ≈ resting). */
+  /** Aggregated minimum (e.g. lowest heart rate). */
   Min?: number
   /** Aggregated maximum. */
   Max?: number
-  /** Some sleep payloads expose these (in hours) instead of a qty. */
-  asleep?: number
+  // --- sleep_analysis fields, all in hours ---
   totalSleep?: number
+  inBed?: number
+  deep?: number
+  core?: number
+  rem?: number
+  awake?: number
+  // --- sleep_analysis timestamps (HAE "yyyy-MM-dd HH:mm:ss +0000" or ISO) ---
+  sleepStart?: string
+  sleepEnd?: string
+  inBedStart?: string
+  inBedEnd?: string
 }
 
 interface Metric {
@@ -50,9 +66,9 @@ interface Metric {
 /** The mapped output consumed by Atlas screens. Every field is nullable so a
  *  missing metric falls back per-field to the hard-coded data.ts value. */
 export interface HealthData {
-  /** Resting HR (bpm) → Readiness + Sleep screens. */
+  /** Resting HR (bpm) → Readiness + Sleep screens. From `resting_heart_rate` only. */
   restingHeartRate: number | null
-  /** Average HR (bpm) → Sleep + Readiness screens. */
+  /** Average HR (bpm) → Sleep + Readiness screens. From `heart_rate` Avg. */
   averageHeartRate: number | null
   /** Heart-rate variability (ms) → Home tiles + Readiness screen. */
   hrv: number | null
@@ -62,24 +78,34 @@ export interface HealthData {
   sleepHours: number | null
   /** Total sleep, leftover-minutes component (e.g. 42 of "7h 42m"). */
   sleepMinutes: number | null
+  /** Deep sleep, minutes → Sleep screen "Deep" stage tile. */
+  sleepDeepMinutes: number | null
+  /** REM sleep, minutes → Sleep screen "REM" stage tile. */
+  sleepRemMinutes: number | null
+  /** Awake time, minutes → Sleep screen "Awake" stage tile. */
+  sleepAwakeMinutes: number | null
+  /** Core sleep, minutes → Sleep screen (derived/remaining stage). */
+  sleepCoreMinutes: number | null
+  /** Fell-asleep clock time, local "HH:MM" → Sleep screen. */
+  sleepStart: string | null
+  /** Final-wake clock time, local "HH:MM" → Sleep screen. */
+  sleepEnd: string | null
+  /** Got-into-bed clock time, local "HH:MM" → Sleep screen BedtimeCard. */
+  inBedStart: string | null
+  /** Out-of-bed clock time, local "HH:MM" → Sleep screen BedtimeCard. */
+  inBedEnd: string | null
   /** Step count → Home / future activity screen. */
   steps: number | null
   /** Caffeine (mg) → Energy screen caffeine value. */
   caffeineMg: number | null
-  /** Active energy burned (kcal) → Nutrition / Home. */
+  /** Active energy burned (kcal, converted from kJ) → Nutrition / Home. */
   activeEnergyKcal: number | null
   /** Hydration (litres) → Nutrition screen. */
   hydrationLitres: number | null
 }
 
-/**
- * Sleep unit divisor. The request specifies HAE sends total sleep in **seconds**,
- * so we divide by 60 to reach minutes. NOTE: many HAE configurations report
- * sleep in **hours** (via `asleep` / `totalSleep`) instead — if your mapped
- * sleep looks wildly wrong, change this to map hours→minutes (`* 60`) and read
- * the `asleep` field below instead of `qty`.
- */
-const SLEEP_SECONDS_PER_MINUTE = 60
+/** Health Auto Export reports active_energy in kJ; multiply to get kcal. */
+const KJ_TO_KCAL = 0.239006
 
 /** Empty/missing result: every field null. */
 function emptyHealthData(): HealthData {
@@ -90,6 +116,14 @@ function emptyHealthData(): HealthData {
     sleepTotalMinutes: null,
     sleepHours: null,
     sleepMinutes: null,
+    sleepDeepMinutes: null,
+    sleepRemMinutes: null,
+    sleepAwakeMinutes: null,
+    sleepCoreMinutes: null,
+    sleepStart: null,
+    sleepEnd: null,
+    inBedStart: null,
+    inBedEnd: null,
     steps: null,
     caffeineMg: null,
     activeEnergyKcal: null,
@@ -108,47 +142,91 @@ function points(metric: Metric | undefined): MetricDataPoint[] | null {
   return metric.data
 }
 
+/** Numeric values of a named field across a metric's points (empty array if none). */
+function fieldValues(metric: Metric | undefined, field: keyof MetricDataPoint): number[] {
+  const pts = points(metric)
+  if (!pts) return []
+  return pts.map((p) => p[field]).filter((v): v is number => typeof v === 'number')
+}
+
 /** Sum of `qty` across all points — for cumulative totals (steps, caffeine, …). */
 function sumQty(metric: Metric | undefined): number | null {
-  const pts = points(metric)
-  if (!pts) return null
-  const values = pts.map((p) => p.qty).filter((q): q is number => typeof q === 'number')
+  const values = fieldValues(metric, 'qty')
   if (values.length === 0) return null
   return values.reduce((sum, q) => sum + q, 0)
 }
 
-/** Average of `qty` across all points — for instantaneous metrics stored as qty (HRV). */
+/** Average of `qty` across all points — for instantaneous metrics stored as qty (HRV, resting HR). */
 function avgQty(metric: Metric | undefined): number | null {
-  const pts = points(metric)
-  if (!pts) return null
-  const values = pts.map((p) => p.qty).filter((q): q is number => typeof q === 'number')
+  const values = fieldValues(metric, 'qty')
   if (values.length === 0) return null
   return values.reduce((sum, q) => sum + q, 0) / values.length
 }
 
 /** Average of a named aggregate field (e.g. "Avg") across points. */
 function avgField(metric: Metric | undefined, field: 'Avg' | 'Min' | 'Max'): number | null {
-  const pts = points(metric)
-  if (!pts) return null
-  const values = pts.map((p) => p[field]).filter((v): v is number => typeof v === 'number')
+  const values = fieldValues(metric, field)
   if (values.length === 0) return null
   return values.reduce((sum, v) => sum + v, 0) / values.length
 }
 
-/** Minimum of a named aggregate field across points (e.g. lowest "Min" HR ≈ resting). */
-function minField(metric: Metric | undefined, field: 'Avg' | 'Min' | 'Max'): number | null {
-  const pts = points(metric)
-  if (!pts) return null
-  const values = pts.map((p) => p[field]).filter((v): v is number => typeof v === 'number')
+/**
+ * Sum a named sleep field (in hours) across points and convert to minutes, or
+ * null if absent. Summing handles payloads that split sleep into segments.
+ */
+function sleepFieldMinutes(
+  metric: Metric | undefined,
+  field: 'totalSleep' | 'deep' | 'core' | 'rem' | 'awake',
+): number | null {
+  const values = fieldValues(metric, field)
   if (values.length === 0) return null
-  return Math.min(...values)
+  const hours = values.reduce((sum, h) => sum + h, 0)
+  return Math.round(hours * 60)
 }
 
-/** Total sleep in seconds, summed from each point's `qty` (per the HAE seconds assumption). */
-function sleepSeconds(metric: Metric | undefined): number | null {
-  // Adjust here if your HAE payload reports sleep in hours via `asleep`/`totalSleep`
-  // (e.g. `p.asleep * 3600`) — see SLEEP_SECONDS_PER_MINUTE note above.
-  return sumQty(metric)
+/**
+ * Parse an HAE timestamp to a Date, or null. Accepts ISO and HAE's
+ * "yyyy-MM-dd HH:mm:ss +0000" (space-separated, numeric offset) by normalizing
+ * the space to `T` and the offset to `+00:00` on the fallback path.
+ */
+function parseHaeDate(raw: unknown): Date | null {
+  if (typeof raw !== 'string' || raw.trim() === '') return null
+  const direct = new Date(raw)
+  if (!Number.isNaN(direct.getTime())) return direct
+  const iso = raw.trim().replace(' ', 'T').replace(/\s*([+-]\d{2})(\d{2})$/, '$1:$2')
+  const normalized = new Date(iso)
+  return Number.isNaN(normalized.getTime()) ? null : normalized
+}
+
+/** Local "HH:MM" (device timezone) for a Date. */
+function hhmmLocal(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/**
+ * Earliest/latest timestamp of a named field across a sleep metric's points,
+ * as local "HH:MM" — or null if absent/unparseable. `earliest` suits start
+ * fields, `latest` suits end fields when HAE splits a night into segments.
+ */
+function sleepClock(
+  metric: Metric | undefined,
+  field: 'sleepStart' | 'sleepEnd' | 'inBedStart' | 'inBedEnd',
+  pick: 'earliest' | 'latest',
+): string | null {
+  const pts = points(metric)
+  if (!pts) return null
+  const dates = pts.map((p) => parseHaeDate(p[field])).filter((d): d is Date => d !== null)
+  if (dates.length === 0) return null
+  const chosen = dates.reduce((a, b) =>
+    pick === 'earliest'
+      ? a.getTime() <= b.getTime()
+        ? a
+        : b
+      : a.getTime() >= b.getTime()
+        ? a
+        : b,
+  )
+  return hhmmLocal(chosen)
 }
 
 export function mapHealthData(payload: unknown): HealthData {
@@ -157,33 +235,44 @@ export function mapHealthData(payload: unknown): HealthData {
 
   const list = metrics as Metric[]
 
-  // heart_rate → average (Avg) for Sleep/Readiness; its Min approximates resting HR.
-  const heartRate = findMetric(list, 'heart_rate')
-  const averageHeartRate = avgField(heartRate, 'Avg')
+  // heart_rate → average HR (Avg) for Sleep/Readiness. (Capitalized Avg/Min/Max.)
+  const averageHeartRate = avgField(findMetric(list, 'heart_rate'), 'Avg')
 
-  // resting_heart_rate → resting HR for Readiness; preferred over heart_rate Min.
-  const restingMetric = findMetric(list, 'resting_heart_rate')
-  const restingHeartRate = avgQty(restingMetric) ?? minField(heartRate, 'Min')
+  // resting_heart_rate → resting HR for Readiness/Sleep. Null until this metric is
+  // enabled in the automation — intentionally NOT derived from heart_rate Min.
+  const restingHeartRate = avgQty(findMetric(list, 'resting_heart_rate'))
 
-  // heart_rate_variability → HRV (ms) for Home tiles + Readiness.
+  // heart_rate_variability → HRV (ms) for Home tiles + Readiness. Null until added.
   const hrv = avgQty(findMetric(list, 'heart_rate_variability'))
 
-  // sleep_analysis → total sleep duration; seconds → hours + minutes.
-  const sleepSecs = sleepSeconds(findMetric(list, 'sleep_analysis'))
-  const sleepTotalMinutes = sleepSecs === null ? null : Math.round(sleepSecs / SLEEP_SECONDS_PER_MINUTE)
+  // sleep_analysis → durations in hours → minutes. totalSleep drives the Home/Sleep
+  // duration display; deep/rem/awake/core feed the Sleep screen stage tiles.
+  const sleepMetric = findMetric(list, 'sleep_analysis')
+  const sleepTotalMinutes = sleepFieldMinutes(sleepMetric, 'totalSleep')
   const sleepHours = sleepTotalMinutes === null ? null : Math.floor(sleepTotalMinutes / 60)
   const sleepMinutes = sleepTotalMinutes === null ? null : sleepTotalMinutes % 60
+  const sleepDeepMinutes = sleepFieldMinutes(sleepMetric, 'deep')
+  const sleepRemMinutes = sleepFieldMinutes(sleepMetric, 'rem')
+  const sleepAwakeMinutes = sleepFieldMinutes(sleepMetric, 'awake')
+  const sleepCoreMinutes = sleepFieldMinutes(sleepMetric, 'core')
 
-  // step_count → steps for Home / future activity screen (cumulative).
+  // sleep_analysis timestamps → local "HH:MM" clock times for the Sleep screen.
+  const sleepStart = sleepClock(sleepMetric, 'sleepStart', 'earliest')
+  const sleepEnd = sleepClock(sleepMetric, 'sleepEnd', 'latest')
+  const inBedStart = sleepClock(sleepMetric, 'inBedStart', 'earliest')
+  const inBedEnd = sleepClock(sleepMetric, 'inBedEnd', 'latest')
+
+  // step_count → steps for Home / future activity screen (cumulative qty).
   const steps = sumQty(findMetric(list, 'step_count'))
 
-  // dietary_caffeine → total mg for the Energy screen (cumulative).
+  // dietary_caffeine → total mg for the Energy screen (cumulative). Null until added.
   const caffeineMg = sumQty(findMetric(list, 'dietary_caffeine'))
 
-  // active_energy_burned → kcal for Nutrition / Home (cumulative).
-  const activeEnergyKcal = sumQty(findMetric(list, 'active_energy_burned'))
+  // active_energy → kJ; convert to kcal for Nutrition / Home (cumulative qty).
+  const activeEnergyKj = sumQty(findMetric(list, 'active_energy'))
+  const activeEnergyKcal = activeEnergyKj === null ? null : Math.round(activeEnergyKj * KJ_TO_KCAL)
 
-  // dietary_water → hydration litres for Nutrition (cumulative; HAE unit is litres).
+  // dietary_water → hydration litres for Nutrition (cumulative). Null until added.
   const hydrationLitres = sumQty(findMetric(list, 'dietary_water'))
 
   return {
@@ -193,6 +282,14 @@ export function mapHealthData(payload: unknown): HealthData {
     sleepTotalMinutes,
     sleepHours,
     sleepMinutes,
+    sleepDeepMinutes,
+    sleepRemMinutes,
+    sleepAwakeMinutes,
+    sleepCoreMinutes,
+    sleepStart,
+    sleepEnd,
+    inBedStart,
+    inBedEnd,
     steps,
     caffeineMg,
     activeEnergyKcal,

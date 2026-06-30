@@ -23,59 +23,180 @@ export const readiness = {
 }
 
 /**
- * Readiness scoring formula. Blends four daily signals into a 0–100 score,
- * used by the Home ring when live values are available (else `readiness.score`).
+ * Readiness scoring formula. Blends five daily signals into a 0–100 score:
+ *   readiness = 0.35·hrv + 0.25·sleep + 0.15·rhr + 0.15·strain − 0.10·caffeine_drag
  *
- * Each signal is normalized to a 0–100 sub-score against a target/range, then
- * combined with the weights below. Tweak the targets and weights freely — this
- * is a sensible starting point, not a clinical model.
+ * Each positive signal is normalized to a 0–100 sub-score against a target/range;
+ * caffeine is a *drag* subtracted from the total. The positive weights sum to
+ * 0.90, so a perfect, caffeine-clear day caps near 90 — that's intentional.
+ * Tweak the targets and weights freely — a sensible starting point, not a
+ * clinical model.
  */
 export const READINESS = {
-  /** Sub-score weights (should sum to 1). */
-  weights: { hrv: 0.35, sleep: 0.35, restingHr: 0.2, caffeine: 0.1 },
+  /** Sub-score weights. Positives sum to 0.90; caffeine is subtracted as a drag. */
+  weights: { hrv: 0.35, sleep: 0.25, restingHr: 0.15, strain: 0.15, caffeine: 0.1 },
   /** HRV (ms) that scores 100; higher is better. */
   hrvTargetMs: 80,
-  /** Sleep (minutes) that scores 100; higher is better. 480 = 8h. */
-  sleepTargetMin: 480,
   /** Resting HR band (bpm): restingHrBest scores 100, restingHrWorst scores 0. */
   restingHrBest: 48,
   restingHrWorst: 75,
-  /** Caffeine (mg) at which the caffeine sub-score hits 0; 0 mg scores 100. */
+  /** Caffeine (mg) at which the caffeine drag hits 100; 0 mg → 0 drag. */
   caffeineZeroMg: 400,
+}
+
+/**
+ * Hard-coded contributor fallbacks, used when a live value is absent. Only the
+ * sleep contributor is computed live (via computeSleepScore); the rest fall back
+ * here until their metrics are wired up.
+ */
+export const readinessFallback = {
+  hrvMs: 68, // matches the HRV stat tile
+  restingHr: 58, // matches sleep.lowestRestingHr
+  strainScore: 72, // 0-100 training-load recovery sub-score; hard-coded until live data
+  caffeineMg: 0, // caffeine clear
 }
 
 const clamp01to100 = (n: number) => Math.max(0, Math.min(100, n))
 
+export type ReadinessContributor = 'hrv' | 'sleep' | 'restingHr' | 'strain' | 'caffeine'
+
+export interface ReadinessResult {
+  /** Final 0–100 readiness score. */
+  score: number
+  /** Per-contributor 0–100 health (higher = better), for the verdict. */
+  subScores: Record<ReadinessContributor, number>
+  /** The contributor with the lowest health sub-score. */
+  weakest: ReadinessContributor
+}
+
 /**
- * Compute a 0–100 readiness score from live daily metrics. All four inputs are
- * required; the caller should fall back to `readiness.score` if any are missing.
+ * Compute readiness from a mix of live/fallback contributors. The sleep input is
+ * the 0–100 sleep score (not minutes); caffeine is given in mg and converted to
+ * a drag. Returns the score plus the per-contributor breakdown and weakest link.
  */
 export function computeReadiness(input: {
   hrv: number
-  sleepMinutes: number
+  sleepScore: number
   restingHr: number
+  /** 0–100 training-load recovery sub-score. */
+  strain: number
   caffeineMg: number
-}): number {
+}): ReadinessResult {
   const { weights: w } = READINESS
 
   // HRV: higher is better, capped at the target.
   const hrvScore = clamp01to100((input.hrv / READINESS.hrvTargetMs) * 100)
-  // Sleep: more is better, capped at the target.
-  const sleepScore = clamp01to100((input.sleepMinutes / READINESS.sleepTargetMin) * 100)
+  // Sleep: the sleep score is already a 0–100 sub-score.
+  const sleepScore = clamp01to100(input.sleepScore)
   // Resting HR: lower is better, mapped across the best→worst band (inverted).
   const rhrScore = clamp01to100(
     ((READINESS.restingHrWorst - input.restingHr) /
       (READINESS.restingHrWorst - READINESS.restingHrBest)) *
       100,
   )
-  // Caffeine: less residual is better; 0 mg → 100, caffeineZeroMg → 0.
-  const caffeineScore = clamp01to100(100 - (input.caffeineMg / READINESS.caffeineZeroMg) * 100)
+  // Strain: already a 0–100 recovery sub-score.
+  const strainScore = clamp01to100(input.strain)
+  // Caffeine: a drag. 0 mg → 0 drag, caffeineZeroMg → 100 drag.
+  const caffeineDrag = clamp01to100((input.caffeineMg / READINESS.caffeineZeroMg) * 100)
 
-  return Math.round(
-    hrvScore * w.hrv +
-      sleepScore * w.sleep +
-      rhrScore * w.restingHr +
-      caffeineScore * w.caffeine,
+  const score = clamp01to100(
+    Math.round(
+      hrvScore * w.hrv +
+        sleepScore * w.sleep +
+        rhrScore * w.restingHr +
+        strainScore * w.strain -
+        caffeineDrag * w.caffeine,
+    ),
+  )
+
+  // Health sub-scores (higher = better); caffeine expressed as 100 − drag.
+  const subScores: Record<ReadinessContributor, number> = {
+    hrv: hrvScore,
+    sleep: sleepScore,
+    restingHr: rhrScore,
+    strain: strainScore,
+    caffeine: 100 - caffeineDrag,
+  }
+  const weakest = (Object.keys(subScores) as ReadinessContributor[]).reduce((a, b) =>
+    subScores[a] <= subScores[b] ? a : b,
+  )
+
+  return { score, subScores, weakest }
+}
+
+/** Verdict copy per contributor when it's the weakest link. */
+const WEAKEST_VERDICT: Record<ReadinessContributor, string> = {
+  hrv: 'HRV is your weak link today — keep efforts moderate and let your nervous system settle.',
+  sleep: 'Sleep is dragging readiness down — favour recovery over a hard session.',
+  restingHr: 'Resting heart rate is elevated — your body is still catching up on recovery.',
+  strain: 'Recent training load is high — keep it easy so you can absorb the work.',
+  caffeine: 'Caffeine is still in your system and may be masking your true readiness.',
+}
+
+/**
+ * Verdict text for the readiness ring. When even the weakest contributor is
+ * strong (≥ 80) everything's firing; otherwise name the weakest link.
+ */
+export function readinessVerdict(result: ReadinessResult): string {
+  if (result.subScores[result.weakest] >= 80) {
+    return 'Everything’s firing — a great day to push the hard session.'
+  }
+  return WEAKEST_VERDICT[result.weakest]
+}
+
+/**
+ * Sleep score config. Weighted toward sleep architecture, not just duration.
+ * Tune the weights, target, and architecture band/falloff freely.
+ */
+export const SLEEP_SCORE = {
+  /** Component weights (sum to 1). */
+  weights: { duration: 0.5, architecture: 0.5 },
+  /** Total sleep (minutes) that scores 100; capped, so >target adds nothing. 480 = 8h. */
+  durationTargetMin: 480,
+  /** Healthy combined deep+REM share of total sleep (the restorative stages). */
+  archIdealLow: 0.35,
+  archIdealHigh: 0.45,
+  /** Proportion distance beyond the ideal band at which architecture hits 0. */
+  archFalloff: 0.2,
+}
+
+/**
+ * Compute a 0–100 sleep score from a night's stage minutes.
+ *
+ *   sleepScore = 0.5·duration + 0.5·architecture
+ *
+ *   • duration (50%):     min(totalMinutes / 480, 1) · 100
+ *                         — scales down below the 8h target, capped at 100 so
+ *                           sleeping longer than the target never adds.
+ *   • architecture (50%): based on (deep + REM) / total, the restorative share.
+ *                         Full marks inside the healthy band [35%, 45%]; outside
+ *                         it, scale down linearly with distance from the nearest
+ *                         edge, hitting 0 once `archFalloff` (20pp) beyond the
+ *                         band in either direction.
+ */
+export function computeSleepScore(input: {
+  totalMinutes: number
+  deepMinutes: number
+  remMinutes: number
+}): number {
+  const { weights: w } = SLEEP_SCORE
+
+  // Duration component.
+  const durationScore = clamp01to100((input.totalMinutes / SLEEP_SCORE.durationTargetMin) * 100)
+
+  // Architecture component.
+  const restorative = input.deepMinutes + input.remMinutes
+  const proportion = input.totalMinutes > 0 ? restorative / input.totalMinutes : 0
+  const distance =
+    proportion < SLEEP_SCORE.archIdealLow
+      ? SLEEP_SCORE.archIdealLow - proportion
+      : proportion > SLEEP_SCORE.archIdealHigh
+        ? proportion - SLEEP_SCORE.archIdealHigh
+        : 0
+  const architectureScore = clamp01to100(100 - (distance / SLEEP_SCORE.archFalloff) * 100)
+
+  return clamp01to100(
+    Math.round(durationScore * w.duration + architectureScore * w.architecture),
   )
 }
 
@@ -122,6 +243,14 @@ export const stats: Stat[] = [
     spark: [8, 7, 6, 4, 3, 1, 0],
   },
 ]
+
+/** Daily activity fallbacks — per-field defaults for the Home activity tiles
+ *  (steps, active energy, average HR) when live health data is null. */
+export const activity = {
+  steps: 8231,
+  activeKcal: 437,
+  avgHeartRate: 62, // bpm
+}
 
 export const focus = {
   title: 'Zone-2 Run · 45 min',
@@ -247,9 +376,10 @@ export interface SleepSegment {
 
 export const sleep = {
   totalMinutes: 462, // 7h 42m
-  score: 91,
-  bedtime: '23:02', // 11:02 PM
-  wakeTime: '06:55', // 6:55 AM
+  bedtime: '23:02', // 11:02 PM — in-bed start (fallback for live inBedStart)
+  wakeTime: '06:55', // 6:55 AM — out-of-bed (fallback for live inBedEnd)
+  sleepStart: '23:18', // fell asleep (fallback for live sleepStart)
+  sleepEnd: '06:48', // final wake (fallback for live sleepEnd)
   deepMinutes: 78, // 1:18 · 17%
   remMinutes: 106, // 1:46 · 23%
   awakeMinutes: 14, // 14m  · 3%

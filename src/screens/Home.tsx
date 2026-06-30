@@ -1,7 +1,18 @@
-import { user, formatToday, readiness, stats, computeReadiness } from '../data'
-import { useHealth } from '../api/healthContext'
+import { Footprints, Flame, Heart } from 'lucide-react'
+import {
+  user,
+  formatToday,
+  readiness,
+  readinessFallback,
+  stats,
+  activity,
+  computeReadiness,
+  readinessVerdict,
+} from '../data'
+import { useHealth, sleepScoreFromHealth } from '../api/healthContext'
 import ReadinessRing from '../components/home/ReadinessRing'
 import StatTile from '../components/home/StatTile'
+import MetricTile from '../components/home/MetricTile'
 import FocusCard from '../components/home/FocusCard'
 import ProgressTile from '../components/home/ProgressTile'
 import WaterCard from '../components/WaterCard'
@@ -24,19 +35,22 @@ export default function Home() {
     return stat
   })
 
-  // Recalculate readiness only when all four live inputs are present.
-  const ringScore =
-    health.hrv != null &&
-    health.sleepTotalMinutes != null &&
-    health.restingHeartRate != null &&
-    health.caffeineMg != null
-      ? computeReadiness({
-          hrv: health.hrv,
-          sleepMinutes: health.sleepTotalMinutes,
-          restingHr: health.restingHeartRate,
-          caffeineMg: health.caffeineMg,
-        })
-      : readiness.score
+  // Recalculate readiness from whatever live/fallback mix is available. Each
+  // contributor falls back per-field; sleep uses the computed sleep score.
+  const readinessResult = computeReadiness({
+    hrv: health.hrv ?? readinessFallback.hrvMs,
+    sleepScore: sleepScoreFromHealth(health), // single computed sleep score
+    restingHr: health.restingHeartRate ?? readinessFallback.restingHr,
+    strain: readinessFallback.strainScore,
+    caffeineMg: health.caffeineMg ?? readinessFallback.caffeineMg,
+  })
+  const ringScore = readinessResult.score
+  const verdict = readinessVerdict(readinessResult)
+
+  // Daily activity tiles — each field falls back independently to data.ts.
+  const steps = health.steps ?? activity.steps
+  const activeKcal = Math.round(health.activeEnergyKcal ?? activity.activeKcal)
+  const avgHr = Math.round(health.averageHeartRate ?? activity.avgHeartRate)
 
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-28">
@@ -52,7 +66,7 @@ export default function Home() {
       <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-4 py-6">
         <ReadinessRing score={ringScore} label={readiness.label} />
         <p className="mx-auto mt-5 max-w-[18rem] text-center text-sm leading-relaxed text-text-muted">
-          {readiness.verdict}
+          {verdict}
         </p>
 
         {/* Three stat tiles */}
@@ -61,6 +75,13 @@ export default function Home() {
             <StatTile key={stat.label} stat={stat} />
           ))}
         </div>
+      </div>
+
+      {/* Daily activity */}
+      <div className="mt-4 flex gap-2.5">
+        <MetricTile icon={<Footprints size={15} />} label="STEPS" value={steps.toLocaleString()} />
+        <MetricTile icon={<Flame size={15} />} label="ACTIVE" value={String(activeKcal)} unit="kcal" />
+        <MetricTile icon={<Heart size={15} />} label="AVG HR" value={String(avgHr)} unit="bpm" />
       </div>
 
       {/* Today's Focus */}

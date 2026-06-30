@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { sleep, computeSleepScore } from '../data'
 import { fetchHealthData, fallbackHealthData } from './healthData'
 import { mapHealthData, type HealthData as MappedHealth } from './healthMapper'
 
@@ -50,4 +51,17 @@ export function HealthProvider({ children }: { children: ReactNode }) {
 /** Read the shared health data, live flag, and loading state. */
 export function useHealth(): HealthContextValue {
   return useContext(HealthContext)
+}
+
+/**
+ * The single sleep score, computed from live stage minutes with per-field
+ * fallback to the bundled `sleep` data. Used by both the Sleep ring and the
+ * readiness formula so there's exactly one sleep score.
+ */
+export function sleepScoreFromHealth(health: MappedHealth): number {
+  return computeSleepScore({
+    totalMinutes: health.sleepTotalMinutes ?? sleep.totalMinutes,
+    deepMinutes: health.sleepDeepMinutes ?? sleep.deepMinutes,
+    remMinutes: health.sleepRemMinutes ?? sleep.remMinutes,
+  })
 }

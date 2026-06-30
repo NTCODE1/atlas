@@ -1,7 +1,7 @@
 import { Heart } from 'lucide-react'
-import { formatSleepStat, sleep, sleepStages } from '../data'
-import { useHealth } from '../api/healthContext'
-import Hypnogram from '../components/sleep/Hypnogram'
+import { formatSleepStat, sleep } from '../data'
+import { useHealth, sleepScoreFromHealth } from '../api/healthContext'
+import SleepStageBar from '../components/sleep/SleepStageBar'
 import SleepStat from '../components/sleep/SleepStat'
 import SleepScoreRing from '../components/sleep/SleepScoreRing'
 import SleepBalanceCard from '../components/sleep/SleepBalanceCard'
@@ -15,7 +15,16 @@ export default function Sleep() {
   const deepMin = health.sleepDeepMinutes ?? sleep.deepMinutes
   const remMin = health.sleepRemMinutes ?? sleep.remMinutes
   const awakeMin = health.sleepAwakeMinutes ?? sleep.awakeMinutes
+  // Derive Core so the four stages fill the bar and stay consistent with the tiles.
+  const coreMin = Math.max(0, totalMin - deepMin - remMin - awakeMin)
   const lowHr = Math.round(health.restingHeartRate ?? sleep.lowestRestingHr)
+  const sleepScore = sleepScoreFromHealth(health)
+
+  // Clock times, local "HH:MM", each falling back independently to data.ts.
+  const asleepAt = health.sleepStart ?? sleep.sleepStart
+  const awakeAt = health.sleepEnd ?? sleep.sleepEnd
+  const inBedStart = health.inBedStart ?? sleep.bedtime
+  const inBedEnd = health.inBedEnd ?? sleep.wakeTime
 
   const hours = Math.floor(totalMin / 60)
   const mins = totalMin % 60
@@ -49,12 +58,18 @@ export default function Sleep() {
             </span>
           </div>
 
-          <SleepScoreRing score={sleep.score} />
+          <SleepScoreRing score={sleepScore} />
         </div>
 
-        {/* Hypnogram */}
+        {/* Sleep-stage proportions (summary — HAE gives daily totals, not a timeline) */}
         <div className="mt-5 border-t border-border pt-4">
-          <Hypnogram segments={sleepStages} />
+          <SleepStageBar
+            deepMin={deepMin}
+            coreMin={coreMin}
+            remMin={remMin}
+            awakeMin={awakeMin}
+            totalMin={totalMin}
+          />
         </div>
 
         {/* Stat tiles */}
@@ -85,6 +100,12 @@ export default function Sleep() {
             icon={<Heart size={13} strokeWidth={2} className="text-rose" />}
           />
         </div>
+
+        {/* Asleep → Awake clock times (local) */}
+        <div className="mt-3 text-center text-xs text-text-muted">
+          Asleep <span className="font-medium text-text">{asleepAt}</span> → Awake{' '}
+          <span className="font-medium text-text">{awakeAt}</span>
+        </div>
       </div>
 
       {/* Sleep balance verdict */}
@@ -94,7 +115,7 @@ export default function Sleep() {
 
       {/* Bedtime / wake time */}
       <div className="mt-4">
-        <BedtimeCard />
+        <BedtimeCard bedtime={inBedStart} wakeTime={inBedEnd} />
       </div>
     </div>
   )
