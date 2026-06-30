@@ -32,8 +32,6 @@ export const fallbackHealthData: HealthData = {
   nutrition: data.nutrition,
   meals: data.meals,
   micronutrients: data.micronutrients,
-  caffeine: data.caffeine,
-  caffeineDoses: data.caffeineDoses,
   training: data.training,
   upNext: data.upNext,
   todaysTarget: data.todaysTarget,

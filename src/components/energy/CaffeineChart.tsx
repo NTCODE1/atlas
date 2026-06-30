@@ -3,7 +3,7 @@ import {
   caffeineLevelAt,
   timeToHours,
   type CaffeineDose,
-} from '../../data'
+} from '../../caffeine'
 
 interface CaffeineChartProps {
   doses: CaffeineDose[]

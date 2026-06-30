@@ -2,14 +2,13 @@ import { useState } from 'react'
 import {
   caffeine,
   caffeineClearsAt,
-  caffeineDoses,
   caffeineLevelAt,
-  formatToday,
   hoursToTime,
+  initialCaffeineDoses,
   type CaffeineDose,
-} from '../data'
+} from '../caffeine'
+import { formatToday } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
-import { useHealth } from '../api/healthContext'
 import CaffeineChart from '../components/energy/CaffeineChart'
 import DoseList from '../components/energy/DoseList'
 
@@ -19,15 +18,11 @@ function currentHour(): number {
 }
 
 export default function Energy() {
-  const { health } = useHealth()
-  const [doses, setDoses] = useState<CaffeineDose[]>(caffeineDoses)
+  const [doses, setDoses] = useState<CaffeineDose[]>(initialCaffeineDoses)
 
   const nowHour = currentHour()
-  // Live total caffeine (mg) when available, else the decayed level from doses.
-  const level =
-    health.caffeineMg != null
-      ? Math.round(health.caffeineMg)
-      : Math.round(caffeineLevelAt(doses, nowHour))
+  // Caffeine in system right now: the decay curve summed across logged doses.
+  const level = Math.round(caffeineLevelAt(doses, nowHour))
   const animatedLevel = useCountUp(level)
 
   const clearHour = caffeineClearsAt(doses)
@@ -37,6 +32,14 @@ export default function Energy() {
 
   const addDose = (dose: Omit<CaffeineDose, 'id'>) => {
     setDoses((prev) => [...prev, { ...dose, id: `d-${Date.now()}` }])
+  }
+
+  const updateDose = (dose: CaffeineDose) => {
+    setDoses((prev) => prev.map((d) => (d.id === dose.id ? dose : d)))
+  }
+
+  const deleteDose = (id: string) => {
+    setDoses((prev) => prev.filter((d) => d.id !== id))
   }
 
   return (
@@ -79,7 +82,12 @@ export default function Energy() {
 
       {/* Doses */}
       <div className="mt-4">
-        <DoseList doses={doses} onAdd={addDose} />
+        <DoseList
+          doses={doses}
+          onAdd={addDose}
+          onUpdate={updateDose}
+          onDelete={deleteDose}
+        />
       </div>
     </div>
   )

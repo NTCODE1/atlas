@@ -1,32 +1,70 @@
 import { useState } from 'react'
-import { Coffee, Plus, X } from 'lucide-react'
-import type { CaffeineDose } from '../../data'
+import { Coffee, Plus, Trash2, X } from 'lucide-react'
+import { CAFFEINE_PRESETS, type CaffeineDose } from '../../caffeine'
 
 interface DoseListProps {
   doses: CaffeineDose[]
   onAdd: (dose: Omit<CaffeineDose, 'id'>) => void
+  onUpdate: (dose: CaffeineDose) => void
+  onDelete: (id: string) => void
 }
 
-export default function DoseList({ doses, onAdd }: DoseListProps) {
+/** Current wall-clock time as "HH:MM" for pre-filling the form. */
+function nowTime(): string {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+}
+
+export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListProps) {
   const [open, setOpen] = useState(false)
+  // null = adding a new dose; otherwise the id of the dose being edited.
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [drink, setDrink] = useState('')
-  const [time, setTime] = useState('12:00')
+  const [time, setTime] = useState(nowTime())
   const [mg, setMg] = useState('80')
 
   const sorted = [...doses].sort((a, b) => a.time.localeCompare(b.time))
 
-  const reset = () => {
-    setDrink('')
-    setTime('12:00')
-    setMg('80')
+  const close = () => {
     setOpen(false)
+    setEditingId(null)
+    setDrink('')
+    setTime(nowTime())
+    setMg('80')
+  }
+
+  const openForAdd = () => {
+    setEditingId(null)
+    setDrink('')
+    setTime(nowTime())
+    setMg('80')
+    setOpen(true)
+  }
+
+  const openForEdit = (dose: CaffeineDose) => {
+    setEditingId(dose.id)
+    setDrink(dose.drink)
+    setTime(dose.time)
+    setMg(String(dose.mg))
+    setOpen(true)
+  }
+
+  // Pre-fill name + mg from a preset; time and editability are left untouched.
+  const applyPreset = (preset: { drink: string; mg: number }) => {
+    setDrink(preset.drink)
+    setMg(String(preset.mg))
   }
 
   const submit = () => {
     const amount = Number(mg)
     if (!drink.trim() || !Number.isFinite(amount) || amount <= 0) return
-    onAdd({ drink: drink.trim(), time, mg: Math.round(amount) })
-    reset()
+    const fields = { drink: drink.trim(), time, mg: Math.round(amount) }
+    if (editingId) {
+      onUpdate({ id: editingId, ...fields })
+    } else {
+      onAdd(fields)
+    }
+    close()
   }
 
   return (
@@ -37,17 +75,32 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
         </span>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? 'Close add dose form' : 'Add a dose'}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
+          onClick={() => (open ? close() : openForAdd())}
+          className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
         >
-          {open ? <X size={15} strokeWidth={2.5} /> : <Plus size={15} strokeWidth={2.5} />}
+          {open ? <X size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
+          {open ? 'Close' : 'Log drink'}
         </button>
       </div>
 
-      {/* Inline add form */}
+      {/* Add / edit form */}
       {open && (
         <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border bg-surface-2 p-3">
+          {/* Quick-add presets */}
+          <div className="flex flex-wrap gap-1.5">
+            {CAFFEINE_PRESETS.map((preset) => (
+              <button
+                key={preset.drink}
+                type="button"
+                onClick={() => applyPreset(preset)}
+                className="rounded-full border border-border bg-bg px-2.5 py-1 text-xs text-text-muted transition-colors hover:border-accent/60 hover:text-text"
+              >
+                {preset.drink}
+                <span className="ml-1 text-accent">{preset.mg}</span>
+              </button>
+            ))}
+          </div>
+
           <input
             type="text"
             value={drink}
@@ -78,7 +131,7 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
             onClick={submit}
             className="rounded-lg bg-accent py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
           >
-            Add dose
+            {editingId ? 'Save changes' : 'Add dose'}
           </button>
         </div>
       )}
@@ -93,17 +146,32 @@ export default function DoseList({ doses, onAdd }: DoseListProps) {
             key={dose.id}
             className={`flex items-center gap-3 py-2.5 ${i > 0 ? 'border-t border-border' : ''}`}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent">
-              <Coffee size={15} />
-            </div>
-            <div className="flex flex-1 flex-col">
-              <span className="text-sm font-medium text-text">{dose.drink}</span>
-              <span className="text-xs text-text-muted">{dose.time}</span>
-            </div>
-            <span className="font-display text-sm font-semibold text-accent">
-              {dose.mg}
-              <span className="ml-0.5 text-xs font-normal text-text-muted">mg</span>
-            </span>
+            {/* Tap the dose to edit it */}
+            <button
+              type="button"
+              onClick={() => openForEdit(dose)}
+              className="flex flex-1 items-center gap-3 text-left"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <Coffee size={15} />
+              </div>
+              <div className="flex flex-1 flex-col">
+                <span className="text-sm font-medium text-text">{dose.drink}</span>
+                <span className="text-xs text-text-muted">{dose.time}</span>
+              </div>
+              <span className="font-display text-sm font-semibold text-accent">
+                {dose.mg}
+                <span className="ml-0.5 text-xs font-normal text-text-muted">mg</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(dose.id)}
+              aria-label={`Delete ${dose.drink}`}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-rose/10 hover:text-rose"
+            >
+              <Trash2 size={15} />
+            </button>
           </li>
         ))}
       </ul>
