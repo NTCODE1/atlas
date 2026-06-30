@@ -153,11 +153,14 @@ export const SLEEP_SCORE = {
   weights: { duration: 0.5, architecture: 0.5 },
   /** Total sleep (minutes) that scores 100; capped, so >target adds nothing. 480 = 8h. */
   durationTargetMin: 480,
-  /** Healthy combined deep+REM share of total sleep (the restorative stages). */
-  archIdealLow: 0.35,
-  archIdealHigh: 0.45,
-  /** Proportion distance beyond the ideal band at which architecture hits 0. */
-  archFalloff: 0.2,
+  /** Duration curve steepness: score = (actual/target)^exp · 100. >1 punishes short nights. */
+  durationExponent: 1.5,
+  /** Healthy deep share of total sleep [low, high]; score peaks at the midpoint (18%). */
+  deepRange: [0.13, 0.23] as const,
+  /** Healthy REM share of total sleep [low, high]; score peaks at the midpoint (22.5%). */
+  remRange: [0.2, 0.25] as const,
+  /** Distance (share of total) from a stage's midpoint at which that stage scores 0. Smaller = stricter. */
+  archZeroDistance: 0.5,
 }
 
 /**
@@ -165,14 +168,21 @@ export const SLEEP_SCORE = {
  *
  *   sleepScore = 0.5·duration + 0.5·architecture
  *
- *   • duration (50%):     min(totalMinutes / 480, 1) · 100
- *                         — scales down below the 8h target, capped at 100 so
- *                           sleeping longer than the target never adds.
- *   • architecture (50%): based on (deep + REM) / total, the restorative share.
- *                         Full marks inside the healthy band [35%, 45%]; outside
- *                         it, scale down linearly with distance from the nearest
- *                         edge, hitting 0 once `archFalloff` (20pp) beyond the
- *                         band in either direction.
+ *   • duration (50%):     min(total / 480, 1) ^ 1.5 · 100 — a steep power curve,
+ *                         capped at 100, that drops off fast for short nights:
+ *                         5h→49, 5h42m→60, 6h→65, 7h→82, 8h→100.
+ *   • architecture (50%): deep and REM scored SEPARATELY against their own
+ *                         healthy ranges (deep 13–23%, REM 20–25%), then averaged
+ *                         — so a weak REM isn't masked by a strong deep. Each
+ *                         stage peaks (100) at its range midpoint and falls
+ *                         linearly to 0 at `archZeroDistance` from it.
+ *
+ *   Worked example — 5h42m, 29% deep / 11% REM:
+ *     duration     = (342/480)^1.5·100         = 60
+ *     deep         = 100 − |0.29−0.18|/0.5·100  = 78
+ *     rem          = 100 − |0.11−0.225|/0.5·100 = 77
+ *     architecture = (78 + 77) / 2              = 77.5
+ *     sleepScore   = 0.5·60 + 0.5·77.5          = 69   (was 86 under the old formula)
  */
 export function computeSleepScore(input: {
   totalMinutes: number
@@ -181,19 +191,20 @@ export function computeSleepScore(input: {
 }): number {
   const { weights: w } = SLEEP_SCORE
 
-  // Duration component.
-  const durationScore = clamp01to100((input.totalMinutes / SLEEP_SCORE.durationTargetMin) * 100)
+  // Duration component: steep power curve vs the 8h target, capped at 100.
+  const ratio = Math.min(input.totalMinutes / SLEEP_SCORE.durationTargetMin, 1)
+  const durationScore = clamp01to100(ratio ** SLEEP_SCORE.durationExponent * 100)
 
-  // Architecture component.
-  const restorative = input.deepMinutes + input.remMinutes
-  const proportion = input.totalMinutes > 0 ? restorative / input.totalMinutes : 0
-  const distance =
-    proportion < SLEEP_SCORE.archIdealLow
-      ? SLEEP_SCORE.archIdealLow - proportion
-      : proportion > SLEEP_SCORE.archIdealHigh
-        ? proportion - SLEEP_SCORE.archIdealHigh
-        : 0
-  const architectureScore = clamp01to100(100 - (distance / SLEEP_SCORE.archFalloff) * 100)
+  // Architecture component: per-stage closeness to the midpoint of its own range.
+  const stageScore = (minutes: number, [low, high]: readonly [number, number]) => {
+    if (input.totalMinutes <= 0) return 0
+    const center = (low + high) / 2
+    const distance = Math.abs(minutes / input.totalMinutes - center)
+    return clamp01to100(100 - (distance / SLEEP_SCORE.archZeroDistance) * 100)
+  }
+  const deepScore = stageScore(input.deepMinutes, SLEEP_SCORE.deepRange)
+  const remScore = stageScore(input.remMinutes, SLEEP_SCORE.remRange)
+  const architectureScore = (deepScore + remScore) / 2
 
   return clamp01to100(
     Math.round(durationScore * w.duration + architectureScore * w.architecture),
