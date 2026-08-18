@@ -36,9 +36,12 @@ interface PillRect {
 }
 
 /**
- * Floating iOS "liquid glass" bottom nav with 8 destinations. The bar is a
- * translucent, heavily blurred pane; a single glass pill glides behind the
- * active tab with a spring, so switching feels fluid rather than snapping.
+ * Floating iOS "liquid glass" bottom nav with 8 destinations. Icon-only and
+ * fully capsule-shaped (both the outer bar and the active-tab highlight use
+ * rounded-full), matching Apple's actual Liquid Glass tab bar silhouette
+ * rather than a rounded rectangle with labels. A single glass pill glides
+ * behind the active tab with a spring — since each tab is a fixed square, the
+ * pill reads as a glowing glass "blob" that slides between icons.
  */
 export default function TabBar({ active, onChange }: TabBarProps) {
   const listRef = useRef<HTMLUListElement>(null)
@@ -67,14 +70,8 @@ export default function TabBar({ active, onChange }: TabBarProps) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-40"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="glass-strong pointer-events-auto relative mx-3 mb-3 overflow-hidden rounded-[26px]">
-        {/* Top sheen for the glass highlight */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.08] to-transparent"
-        />
-
-        <ul ref={listRef} className="relative flex items-stretch overflow-x-auto no-scrollbar px-2 py-2">
+      <div className="tabbar-glass pointer-events-auto relative mx-3 mb-3 overflow-hidden rounded-full">
+        <ul ref={listRef} className="relative flex items-center overflow-x-auto no-scrollbar px-2 py-2">
           {/* Gliding liquid-glass pill behind the active tab. z-0 keeps it under
               the buttons (which are relative z-10). Kept a direct child of <ul>
               so offsetLeft/Top measure against the same box the pill sits in. */}
@@ -92,7 +89,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
               // NOTE: <li> must stay non-positioned so the button's offsetParent
               // is the <ul> — the pill's measurement reference. Layering is on
               // the button (relative z-10) instead.
-              <li key={id} className="w-[68px] shrink-0">
+              <li key={id} className="w-11 shrink-0">
                 <button
                   ref={(el) => {
                     if (el) btnRefs.current.set(id, el)
@@ -101,12 +98,13 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                   type="button"
                   onClick={() => onChange(id)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`press relative z-10 flex w-full flex-col items-center gap-1 rounded-2xl py-1.5 transition-colors duration-300 ${
+                  aria-label={label}
+                  title={label}
+                  className={`press relative z-10 flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-300 ${
                     isActive ? 'text-accent' : 'text-text-muted hover:text-text'
                   }`}
                 >
                   <Icon size={22} strokeWidth={isActive ? 2.25 : 1.75} />
-                  <span className="text-[11px] font-medium tracking-wide">{label}</span>
                 </button>
               </li>
             )
