@@ -11,15 +11,19 @@ interface MetricTileProps {
  *  Matches the StatTile card idiom but without the sparkline/trend. */
 export default function MetricTile({ icon, label, value, unit }: MetricTileProps) {
   return (
-    <div className="flex flex-1 flex-col rounded-2xl border border-border bg-surface px-3 py-3">
-      <div className="flex items-center gap-1.5">
-        <span className="text-text-muted">{icon}</span>
-        <span className="text-[11px] font-medium tracking-wider text-text-muted">{label}</span>
+    <div className="glass-subtle flex flex-1 flex-col rounded-2xl px-2.5 py-3">
+      <div className="flex min-w-0 items-center gap-1">
+        <span className="shrink-0 text-text-muted">{icon}</span>
+        <span className="truncate whitespace-nowrap text-[10px] font-medium tracking-wider text-text-muted">
+          {label}
+        </span>
       </div>
 
-      <div className="mt-1.5 flex items-baseline gap-0.5">
-        <span className="font-display text-2xl font-bold text-text">{value}</span>
-        {unit && <span className="text-xs text-text-muted">{unit}</span>}
+      <div className="mt-1.5 flex min-w-0 items-baseline gap-0.5">
+        <span className="truncate font-display text-lg font-bold tracking-tight tabular-nums text-text">
+          {value}
+        </span>
+        {unit && <span className="shrink-0 text-xs text-text-muted">{unit}</span>}
       </div>
     </div>
   )

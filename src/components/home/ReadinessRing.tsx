@@ -4,6 +4,10 @@ import { useCountUp } from '../../hooks/useCountUp'
 interface ReadinessRingProps {
   score: number
   label: string
+  /** True until the health fetch resolves — shows an empty ring instead of a
+   *  score computed from zeroed placeholder data (which would read as a false
+   *  "very poor" score for a moment on every cold load). */
+  loading?: boolean
 }
 
 const SIZE = 240
@@ -18,8 +22,8 @@ const CIRC = 2 * Math.PI * RADIUS
  * drop-shadow on the arc itself — it hugs the stroke (no boxy filter region)
  * and is GPU-accelerated, so it doesn't trail the arc during the sweep.
  */
-export default function ReadinessRing({ score, label }: ReadinessRingProps) {
-  const count = useCountUp(score, 1200)
+export default function ReadinessRing({ score, label, loading }: ReadinessRingProps) {
+  const count = useCountUp(loading ? 0 : score, 1200)
   const targetOffset = CIRC * (1 - score / 100)
 
   return (
@@ -32,8 +36,8 @@ export default function ReadinessRing({ score, label }: ReadinessRingProps) {
       >
         <defs>
           <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#2E5BFF" />
-            <stop offset="100%" stopColor="#5B82FF" />
+            <stop offset="0%" stopColor="var(--color-sky)" />
+            <stop offset="100%" stopColor="var(--color-accent-bright)" />
           </linearGradient>
         </defs>
 
@@ -43,11 +47,13 @@ export default function ReadinessRing({ score, label }: ReadinessRingProps) {
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="var(--color-fill)"
           strokeWidth={STROKE}
         />
 
-        {/* Mint arc — glow comes from the CSS drop-shadow on .ring-arc */}
+        {/* Progress arc — glow comes from the CSS drop-shadow on .ring-arc.
+            While loading, stay fully unfilled instead of sweeping to a score
+            computed from placeholder zeros. */}
         <circle
           cx={SIZE / 2}
           cy={SIZE / 2}
@@ -57,12 +63,15 @@ export default function ReadinessRing({ score, label }: ReadinessRingProps) {
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={CIRC}
-          className="ring-arc"
+          strokeDashoffset={loading ? CIRC : undefined}
+          className={loading ? '' : 'ring-arc'}
           style={
-            {
-              '--target-offset': `${targetOffset}px`,
-              '--circ': `${CIRC}px`,
-            } as CSSProperties
+            loading
+              ? undefined
+              : ({
+                  '--target-offset': `${targetOffset}px`,
+                  '--circ': `${CIRC}px`,
+                } as CSSProperties)
           }
         />
       </svg>
@@ -70,10 +79,10 @@ export default function ReadinessRing({ score, label }: ReadinessRingProps) {
       {/* Centre label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="num-glow font-display text-[68px] font-bold leading-none text-text">
-          {count}
+          {loading ? '–' : count}
         </span>
         <span className="mt-2 font-display text-sm font-semibold tracking-[0.32em] text-accent">
-          {label}
+          {loading ? 'LOADING' : label}
         </span>
       </div>
     </div>

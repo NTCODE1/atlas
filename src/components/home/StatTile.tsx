@@ -20,7 +20,7 @@ export default function StatTile({ stat }: { stat: Stat }) {
   const TrendIcon = stat.trendDir === 'down' ? ArrowDown : ArrowUp
 
   return (
-    <div className="flex flex-1 flex-col rounded-2xl border border-border bg-surface px-3 py-3">
+    <div className="glass-subtle flex flex-1 flex-col rounded-2xl px-3 py-3">
       <span className="text-[11px] font-medium tracking-wider text-text-muted">
         {stat.label}
       </span>
