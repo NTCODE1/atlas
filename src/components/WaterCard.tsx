@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { hydration } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
+import { useHydration, useHydrationGoal } from '../hooks/useHydration'
 import { useHealth } from '../api/healthContext'
 
 const prefersReducedMotion = () =>
@@ -21,13 +21,16 @@ interface WaterCardProps {
  */
 export default function WaterCard({ compact = false }: WaterCardProps) {
   const { health } = useHealth()
+  // Single shared hydration source — the same `atlas.nutrition.hydration` log
+  // used by the Nutrition screen, plus caffeinated drinks from Energy. Updates
+  // here in real time as anything is logged (useLocalStorage broadcasts changes).
+  const { totalMl } = useHydration()
+  const { goalLitres } = useHydrationGoal()
 
-  // Live hydration litres when available, else the hard-coded value.
-  const litres = health.hydrationLitres ?? Number(hydration.value)
-  const percent =
-    health.hydrationLitres != null
-      ? Math.max(0, Math.min(100, Math.round((litres / hydration.goalLitres) * 100)))
-      : hydration.percent
+  // In-app logged intake is primary; fall back to live health, else 0.
+  const loggedLitres = totalMl / 1000
+  const litres = loggedLitres > 0 ? loggedLitres : (health.hydrationLitres ?? 0)
+  const percent = Math.max(0, Math.min(100, Math.round((litres / goalLitres) * 100)))
   const count = useCountUp(percent, 1200)
   const [level, setLevel] = useState(() => (prefersReducedMotion() ? percent : 0))
 
@@ -39,7 +42,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
 
   return (
     <div
-      className={`relative flex-1 overflow-hidden rounded-3xl border border-border bg-surface ${
+      className={`glass relative flex-1 overflow-hidden rounded-3xl ${
         compact ? 'min-h-[150px]' : 'min-h-[160px]'
       }`}
     >
@@ -82,7 +85,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
           </span>
         </div>
         <span className="text-xs text-text-muted">
-          {litres.toFixed(1)} of {hydration.goalLitres} {hydration.unit}
+          {litres.toFixed(1)} of {goalLitres} L
         </span>
       </div>
     </div>
