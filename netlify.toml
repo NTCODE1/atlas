@@ -4,6 +4,12 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # Pin to the Node version this project is developed against — Vite 8 and
+  # friends are recent enough that Netlify's default build image may not
+  # match, which would fail the very first git-triggered build.
+  NODE_VERSION = "24"
+
 # Single-page app: every path that isn't a real file falls back to index.html so
 # client-side routing works on hard refresh / deep links.
 [[redirects]]
