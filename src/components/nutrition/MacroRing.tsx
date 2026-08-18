@@ -28,20 +28,21 @@ export default function MacroRing({ label, grams, target, color }: MacroRingProp
   const { stroke, glow } = COLORS[color]
 
   return (
-    <div className="flex flex-1 flex-col items-center">
-      <div className="relative" style={{ width: SIZE, height: SIZE }}>
+    <div className="flex min-w-0 flex-1 flex-col items-center">
+      {/* w-full + aspect-square lets the ring shrink to fit narrow screens (the
+          SVG's viewBox scales its contents automatically); max-width caps it at
+          the original 104px so nothing changes on wider screens. */}
+      <div className="relative w-full aspect-square" style={{ maxWidth: SIZE }}>
         <svg
-          width={SIZE}
-          height={SIZE}
           viewBox={`0 0 ${SIZE} ${SIZE}`}
-          className="-rotate-90 overflow-visible"
+          className="-rotate-90 overflow-visible w-full h-full"
         >
           <circle
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="var(--color-fill)"
             strokeWidth={STROKE}
           />
           <circle

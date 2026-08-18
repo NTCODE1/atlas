@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Search, UtensilsCrossed } from 'lucide-react'
+import { Loader2, Search, UtensilsCrossed } from 'lucide-react'
 import { defaultMealType, type MealType } from '../../data'
+import { parseMeal } from '../../api/nutritionAI'
+import type { MealMacros } from '../../hooks/useMeals'
 import { MEAL_META, MEAL_ORDER } from './mealMeta'
 
 interface MealTrackerProps {
-  onLog: (type: MealType, name: string) => void
+  onLog: (type: MealType, name: string, macros?: MealMacros) => void
 }
 
 const GRADIENT =
@@ -14,16 +16,31 @@ const GRADIENT =
 export default function MealTracker({ onLog }: MealTrackerProps) {
   const [text, setText] = useState('')
   const [type, setType] = useState<MealType>(() => defaultMealType())
+  const [parsing, setParsing] = useState(false)
 
-  const submit = () => {
+  const submit = async () => {
     const name = text.trim()
-    if (!name) return
-    onLog(type, name)
+    if (!name || parsing) return
+    setParsing(true)
+    // Ask the AI to estimate calories/macros; on any failure we still log the
+    // meal (parseMeal resolves to null rather than throwing).
+    const parsed = await parseMeal(name)
+    const macros: MealMacros | undefined = parsed
+      ? {
+          kcal: parsed.totalKcal,
+          protein: parsed.protein,
+          carbs: parsed.carbs,
+          fat: parsed.fat,
+          micros: parsed.micros,
+        }
+      : undefined
+    onLog(type, name, macros)
     setText('')
+    setParsing(false)
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-surface px-5 py-5">
+    <div className="glass rounded-3xl px-5 py-5">
       <div className="flex items-center gap-2">
         <UtensilsCrossed size={18} className="text-accent" strokeWidth={2} />
         <span className="font-display text-lg font-semibold text-text">Track your meal</span>
@@ -43,16 +60,23 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
+              disabled={parsing}
               placeholder="e.g. 2 eggs, oatmeal, blueberries"
-              className="w-full bg-transparent px-4 py-3.5 text-sm text-text placeholder:text-text-muted focus:outline-none"
+              className="w-full bg-transparent px-4 py-3.5 text-sm text-text placeholder:text-text-muted focus:outline-none disabled:opacity-60"
             />
             <button
               type="button"
               onClick={submit}
-              aria-label="Log meal"
-              className="mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-surface-2 text-text-muted transition-colors hover:bg-white/10 hover:text-text"
+              disabled={parsing}
+              aria-label={parsing ? 'Estimating…' : 'Log meal'}
+              aria-busy={parsing}
+              className="press mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border-strong bg-surface-2 text-text-muted transition-colors hover:bg-fill-2 hover:text-text disabled:opacity-70"
             >
-              <Search size={16} strokeWidth={2} />
+              {parsing ? (
+                <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+              ) : (
+                <Search size={16} strokeWidth={2} />
+              )}
             </button>
           </div>
         </div>
@@ -69,7 +93,7 @@ export default function MealTracker({ onLog }: MealTrackerProps) {
               type="button"
               onClick={() => setType(t)}
               aria-pressed={selected}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none ${
+              className={`press flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none ${
                 selected
                   ? 'border-accent/70 bg-accent/15 text-accent'
                   : 'border-border bg-surface-2 text-text-muted hover:text-text'

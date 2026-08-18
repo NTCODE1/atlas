@@ -1,15 +1,16 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, X } from 'lucide-react'
 import type { Meal } from '../../data'
 import { MEAL_META } from './mealMeta'
 
 interface MealsListProps {
   meals: Meal[]
+  onDelete?: (id: string) => void
 }
 
-/** "Today's Meals" card — logged meals with icon, name, calories, chevron. */
-export default function MealsList({ meals }: MealsListProps) {
+/** "Today's Meals" card — logged meals with icon, name, calories, delete. */
+export default function MealsList({ meals, onDelete }: MealsListProps) {
   return (
-    <div className="rounded-3xl border border-border bg-surface px-5 py-5">
+    <div className="glass rounded-3xl px-5 py-5">
       <div className="flex items-center justify-between">
         <span className="font-display text-lg font-semibold text-text">Today&apos;s Meals</span>
         <button
@@ -36,12 +37,34 @@ export default function MealsList({ meals }: MealsListProps) {
               <div className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-text">{label}</span>
                 <span className="block truncate text-xs text-text-muted">{meal.name}</span>
+                {(meal.protein != null || meal.carbs != null || meal.fat != null) && (
+                  <span className="block truncate text-[11px] text-text-muted">
+                    {[
+                      meal.protein != null ? `P ${meal.protein}g` : null,
+                      meal.carbs != null ? `C ${meal.carbs}g` : null,
+                      meal.fat != null ? `F ${meal.fat}g` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                )}
               </div>
               <span className="shrink-0 font-display text-sm font-semibold text-text">
                 {meal.kcal != null ? meal.kcal : '—'}
                 <span className="ml-1 text-xs font-normal text-text-muted">kcal</span>
               </span>
-              <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-text-muted" />
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(meal.id)}
+                  aria-label={`Delete ${meal.name}`}
+                  className="press grid h-7 w-7 shrink-0 place-items-center rounded-lg text-text-muted transition-colors hover:bg-fill-2 hover:text-text"
+                >
+                  <X size={15} strokeWidth={2} />
+                </button>
+              ) : (
+                <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-text-muted" />
+              )}
             </li>
           )
         })}
