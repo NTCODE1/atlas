@@ -1,0 +1,25 @@
+name = "atlas-api"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+# The Anthropic SDK imports node built-ins (node:fs/node:path in its credential
+# helpers); nodejs_compat provides them on Workers.
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret config. Secrets (API_SECRET, ATLAS_API_KEY, ANTHROPIC_API_KEY,
+# SESSION_SECRET, SETUP_CODE) are set with `wrangler secret put` and must NOT
+# live here.
+#   SESSION_SECRET — random 32+ char string; HMAC key for passkey session tokens.
+#   SETUP_CODE     — one-time code you type once per device to enroll a passkey.
+# The passkey Relying Party ID/origin is derived from the request Origin and
+# validated against ALLOWED_ORIGINS below — so just add your Netlify origin there.
+[vars]
+# Comma-separated CORS allowlist. Add your deployed (Netlify) origin here later,
+# e.g. "https://your-app.netlify.app". Local Vite dev ports included for now.
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174,http://localhost:5175,https://atlas16474859-nt24358.netlify.app"
+# Max AI (Claude) requests per UTC day, to bound abuse.
+AI_DAILY_CAP = "100"
+
+# Run `npx wrangler kv namespace create HEALTH_KV` and paste the printed id below.
+[[kv_namespaces]]
+binding = "HEALTH_KV"
+id = "c97ba23b2ebd4775a73743b9e8654dc8"

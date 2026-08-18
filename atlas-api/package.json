@@ -1,0 +1,22 @@
+{
+  "name": "atlas-api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "test": "node --test src/finnishFoods.test.ts",
+    "test:accuracy": "node --test src/nutritionAccuracy.test.ts",
+    "test:all": "node --test"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260601.0",
+    "typescript": "~5.7.0",
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@simplewebauthn/server": "^13.3.2"
+  }
+}
