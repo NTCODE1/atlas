@@ -24,10 +24,10 @@ export default function LoadBarChart({ days }: LoadBarChartProps) {
           <div key={i} className="flex flex-1 flex-col items-center">
             <div className="flex w-full items-end justify-center" style={{ height: CHART_HEIGHT }}>
               <div
-                className={`w-full max-w-[22px] rounded-md ${
+                className={`w-full max-w-[22px] rounded-full ${
                   day.isToday
-                    ? 'bg-accent shadow-[0_0_16px_rgba(91,130,255,0.45)]'
-                    : 'bg-white/10'
+                    ? 'bg-accent shadow-[0_0_16px_rgba(255,255,255,0.35)]'
+                    : 'bg-fill-2'
                 }`}
                 style={{ height: h }}
               />
