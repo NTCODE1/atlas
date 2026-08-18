@@ -13,6 +13,10 @@ export interface CaffeineDose {
   /** Time taken, "HH:MM" 24-hour. */
   time: string
   mg: number
+  /** Liquid volume in millilitres — counts toward daily hydration. */
+  ml?: number
+  /** Day logged, YYYY-MM-DD — everything reads only today's doses by this field. */
+  date: string
 }
 
 export const caffeine = {
@@ -29,12 +33,12 @@ export const caffeine = {
   clearThresholdMg: 10,
 }
 
-/** Common drinks for the quick-add buttons in the log form. */
-export const CAFFEINE_PRESETS: { drink: string; mg: number }[] = [
-  { drink: 'Espresso', mg: 120 },
-  { drink: 'Coffee', mg: 95 },
-  { drink: 'Tea', mg: 47 },
-  { drink: 'Energy drink', mg: 80 },
+/** Common drinks for the quick-add buttons in the log form (ml → hydration). */
+export const CAFFEINE_PRESETS: { drink: string; mg: number; ml: number }[] = [
+  { drink: 'Espresso', mg: 120, ml: 30 },
+  { drink: 'Coffee', mg: 95, ml: 240 },
+  { drink: 'Tea', mg: 47, ml: 240 },
+  { drink: 'Energy drink', mg: 80, ml: 250 },
 ]
 
 /** Today's logged doses. Starts empty — the user logs their own. */

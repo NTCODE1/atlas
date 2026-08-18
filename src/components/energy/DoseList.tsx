@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Coffee, Plus, Trash2, X } from 'lucide-react'
 import { CAFFEINE_PRESETS, type CaffeineDose } from '../../caffeine'
+import { todayISO } from '../../workouts'
 
 interface DoseListProps {
   doses: CaffeineDose[]
-  onAdd: (dose: Omit<CaffeineDose, 'id'>) => void
+  onAdd: (dose: Omit<CaffeineDose, 'id' | 'date'>) => void
   onUpdate: (dose: CaffeineDose) => void
   onDelete: (id: string) => void
 }
@@ -22,6 +23,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
   const [drink, setDrink] = useState('')
   const [time, setTime] = useState(nowTime())
   const [mg, setMg] = useState('80')
+  const [ml, setMl] = useState('250')
 
   const sorted = [...doses].sort((a, b) => a.time.localeCompare(b.time))
 
@@ -31,6 +33,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
     setDrink('')
     setTime(nowTime())
     setMg('80')
+    setMl('250')
   }
 
   const openForAdd = () => {
@@ -38,6 +41,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
     setDrink('')
     setTime(nowTime())
     setMg('80')
+    setMl('250')
     setOpen(true)
   }
 
@@ -46,21 +50,30 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
     setDrink(dose.drink)
     setTime(dose.time)
     setMg(String(dose.mg))
+    setMl(dose.ml != null ? String(dose.ml) : '250')
     setOpen(true)
   }
 
-  // Pre-fill name + mg from a preset; time and editability are left untouched.
-  const applyPreset = (preset: { drink: string; mg: number }) => {
+  // Pre-fill name + mg + ml from a preset; time and editability are left untouched.
+  const applyPreset = (preset: { drink: string; mg: number; ml: number }) => {
     setDrink(preset.drink)
     setMg(String(preset.mg))
+    setMl(String(preset.ml))
   }
 
   const submit = () => {
     const amount = Number(mg)
     if (!drink.trim() || !Number.isFinite(amount) || amount <= 0) return
-    const fields = { drink: drink.trim(), time, mg: Math.round(amount) }
+    const volume = Number(ml)
+    const fields = {
+      drink: drink.trim(),
+      time,
+      mg: Math.round(amount),
+      ml: Number.isFinite(volume) && volume > 0 ? Math.round(volume) : 0,
+    }
     if (editingId) {
-      onUpdate({ id: editingId, ...fields })
+      const original = doses.find((d) => d.id === editingId)
+      onUpdate({ id: editingId, date: original?.date ?? todayISO(), ...fields })
     } else {
       onAdd(fields)
     }
@@ -68,7 +81,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-surface px-4 py-4">
+    <div className="glass rounded-2xl px-4 py-4">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium tracking-wider text-text-muted">
           TODAY&apos;S DOSES
@@ -76,7 +89,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
         <button
           type="button"
           onClick={() => (open ? close() : openForAdd())}
-          className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+          className="press flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
         >
           {open ? <X size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
           {open ? 'Close' : 'Log drink'}
@@ -85,7 +98,7 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
 
       {/* Add / edit form */}
       {open && (
-        <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border bg-surface-2 p-3">
+        <div className="glass-subtle mt-3 flex flex-col gap-2 rounded-xl p-3">
           {/* Quick-add presets */}
           <div className="flex flex-wrap gap-1.5">
             {CAFFEINE_PRESETS.map((preset) => (
@@ -121,9 +134,21 @@ export default function DoseList({ doses, onAdd, onUpdate, onDelete }: DoseListP
                 value={mg}
                 min={1}
                 onChange={(e) => setMg(e.target.value)}
+                aria-label="Caffeine (mg)"
                 className="w-full bg-transparent py-2 text-sm text-text focus:outline-none"
               />
               <span className="text-xs text-text-muted">mg</span>
+            </div>
+            <div className="flex flex-1 items-center rounded-lg border border-border bg-bg px-3 focus-within:border-accent/60">
+              <input
+                type="number"
+                value={ml}
+                min={0}
+                onChange={(e) => setMl(e.target.value)}
+                aria-label="Volume (ml)"
+                className="w-full bg-transparent py-2 text-sm text-text focus:outline-none"
+              />
+              <span className="text-xs text-text-muted">ml</span>
             </div>
           </div>
           <button
