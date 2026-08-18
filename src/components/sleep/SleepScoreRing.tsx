@@ -3,6 +3,10 @@ import { useCountUp } from '../../hooks/useCountUp'
 
 interface SleepScoreRingProps {
   score: number
+  /** Bucket label, e.g. "Excellent"/"Good"/"Fair"/"Poor" (see sleepScoreLabel in data.ts). */
+  label?: string
+  /** True until the health fetch resolves — see ReadinessRing for why. */
+  loading?: boolean
 }
 
 const SIZE = 116
@@ -11,12 +15,11 @@ const RADIUS = (SIZE - STROKE) / 2
 const CIRC = 2 * Math.PI * RADIUS
 
 /**
- * Compact indigo score donut. Mirrors ReadinessRing but smaller and in indigo:
- * reuses the shared `.ring-arc` sweep animation, overriding its (accent) glow
- * with an inline indigo drop-shadow so no global CSS change is needed.
+ * Compact score donut. Mirrors ReadinessRing but smaller, using the shared
+ * `.ring-arc` sweep animation and glow.
  */
-export default function SleepScoreRing({ score }: SleepScoreRingProps) {
-  const count = useCountUp(score, 1200)
+export default function SleepScoreRing({ score, label, loading }: SleepScoreRingProps) {
+  const count = useCountUp(loading ? 0 : score, 1200)
   const targetOffset = CIRC * (1 - score / 100)
 
   return (
@@ -29,8 +32,8 @@ export default function SleepScoreRing({ score }: SleepScoreRingProps) {
       >
         <defs>
           <linearGradient id="sleep-ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#8a93ff" />
-            <stop offset="100%" stopColor="#b3a8ff" />
+            <stop offset="0%" stopColor="var(--color-cyan)" />
+            <stop offset="100%" stopColor="var(--color-accent)" />
           </linearGradient>
         </defs>
 
@@ -40,11 +43,12 @@ export default function SleepScoreRing({ score }: SleepScoreRingProps) {
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="var(--color-fill)"
           strokeWidth={STROKE}
         />
 
-        {/* Indigo progress arc */}
+        {/* Progress arc — stays fully unfilled while loading instead of
+            sweeping to a score computed from placeholder zeros. */}
         <circle
           cx={SIZE / 2}
           cy={SIZE / 2}
@@ -54,14 +58,15 @@ export default function SleepScoreRing({ score }: SleepScoreRingProps) {
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={CIRC}
-          className="ring-arc"
+          strokeDashoffset={loading ? CIRC : undefined}
+          className={loading ? '' : 'ring-arc'}
           style={
-            {
-              '--target-offset': `${targetOffset}px`,
-              '--circ': `${CIRC}px`,
-              filter:
-                'drop-shadow(0 0 4px rgba(138,147,255,0.55)) drop-shadow(0 0 10px rgba(138,147,255,0.35))',
-            } as CSSProperties
+            loading
+              ? undefined
+              : ({
+                  '--target-offset': `${targetOffset}px`,
+                  '--circ': `${CIRC}px`,
+                } as CSSProperties)
           }
         />
       </svg>
@@ -69,10 +74,10 @@ export default function SleepScoreRing({ score }: SleepScoreRingProps) {
       {/* Centre label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="num-glow font-display text-[34px] font-bold leading-none text-text">
-          {count}
+          {loading ? '–' : count}
         </span>
         <span className="mt-1 font-display text-[10px] font-semibold tracking-[0.32em] text-indigo">
-          SCORE
+          {loading ? 'LOADING' : label ? label.toUpperCase() : 'SCORE'}
         </span>
       </div>
     </div>

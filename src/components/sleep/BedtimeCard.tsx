@@ -14,7 +14,7 @@ export default function BedtimeCard({
   wakeTime = sleep.wakeTime,
 }: BedtimeCardProps) {
   return (
-    <div className="flex items-center rounded-2xl border border-border bg-surface">
+    <div className="glass flex items-center rounded-2xl">
       <div className="flex flex-1 items-center gap-3 px-4 py-3.5">
         <BedDouble size={22} strokeWidth={1.75} className="shrink-0 text-indigo" />
         <div className="flex flex-col">

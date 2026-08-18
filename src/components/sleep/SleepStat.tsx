@@ -23,7 +23,7 @@ export default function SleepStat({
   icon,
 }: SleepStatProps) {
   return (
-    <div className="flex flex-1 flex-col rounded-2xl border border-border bg-surface-2 px-3 py-3">
+    <div className="glass-subtle flex flex-1 flex-col rounded-2xl px-3 py-3">
       <div className="flex items-baseline gap-0.5">
         <span className="font-display text-xl font-bold leading-none text-text">{value}</span>
         {unit && <span className="text-[11px] text-text-muted">{unit}</span>}

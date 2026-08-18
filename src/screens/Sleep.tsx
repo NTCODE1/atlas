@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react'
-import { formatSleepStat, sleep } from '../data'
-import { useHealth, sleepScoreFromHealth } from '../api/healthContext'
+import { formatSleepStat, sleep, computeSleepBalance } from '../data'
+import { useHealth } from '../api/healthContext'
+import { useReadiness } from '../hooks/useReadiness'
 import SleepStageBar from '../components/sleep/SleepStageBar'
 import SleepStat from '../components/sleep/SleepStat'
 import SleepScoreRing from '../components/sleep/SleepScoreRing'
@@ -8,7 +9,7 @@ import SleepBalanceCard from '../components/sleep/SleepBalanceCard'
 import BedtimeCard from '../components/sleep/BedtimeCard'
 
 export default function Sleep() {
-  const { health } = useHealth()
+  const { health, loading } = useHealth()
 
   // Live sleep values, falling back to hard-coded data.ts values per field.
   const totalMin = health.sleepTotalMinutes ?? sleep.totalMinutes
@@ -18,7 +19,7 @@ export default function Sleep() {
   // Derive Core so the four stages fill the bar and stay consistent with the tiles.
   const coreMin = Math.max(0, totalMin - deepMin - remMin - awakeMin)
   const lowHr = Math.round(health.restingHeartRate ?? sleep.lowestRestingHr)
-  const sleepScore = sleepScoreFromHealth(health)
+  const { sleepScore, sleepLabel } = useReadiness()
 
   // Clock times, local "HH:MM", each falling back independently to data.ts.
   const asleepAt = health.sleepStart ?? sleep.sleepStart
@@ -30,6 +31,7 @@ export default function Sleep() {
   const mins = totalMin % 60
   // Stage percentages relative to the (live or fallback) total sleep.
   const pct = (minutes: number) => (totalMin > 0 ? Math.round((minutes / totalMin) * 100) : 0)
+  const balanceVerdict = computeSleepBalance(deepMin, remMin, totalMin)
 
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-28">
@@ -40,7 +42,7 @@ export default function Sleep() {
       </div>
 
       {/* Hero card: total + score ring, hypnogram, stat tiles */}
-      <div className="card-grad mt-4 rounded-3xl border border-border bg-surface px-5 py-5">
+      <div className="card-grad-glass mt-4 rounded-3xl px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-baseline">
@@ -58,7 +60,7 @@ export default function Sleep() {
             </span>
           </div>
 
-          <SleepScoreRing score={sleepScore} />
+          <SleepScoreRing score={sleepScore} label={sleepLabel} loading={loading} />
         </div>
 
         {/* Sleep-stage proportions (summary — HAE gives daily totals, not a timeline) */}
@@ -87,7 +89,7 @@ export default function Sleep() {
             accent="indigo"
           />
           <SleepStat
-            value={formatSleepStat(awakeMin)}
+            value={String(awakeMin)}
             unit="m"
             name="Awake"
             percent={pct(awakeMin)}
@@ -110,7 +112,7 @@ export default function Sleep() {
 
       {/* Sleep balance verdict */}
       <div className="mt-4">
-        <SleepBalanceCard />
+        <SleepBalanceCard verdict={balanceVerdict} />
       </div>
 
       {/* Bedtime / wake time */}

@@ -1,17 +1,22 @@
 import { MoonStar } from 'lucide-react'
-import { sleepBalance } from '../../data'
+import type { SleepBalanceVerdict } from '../../data'
 
-/** "Sleep Balance" verdict card — label, title, blurb, and an indigo moon icon. */
-export default function SleepBalanceCard() {
+interface SleepBalanceCardProps {
+  verdict: SleepBalanceVerdict
+}
+
+/** "Sleep Balance" verdict card — label, title, blurb, and an indigo moon icon.
+ *  `verdict` is computed from tonight's real deep/REM split (see computeSleepBalance). */
+export default function SleepBalanceCard({ verdict }: SleepBalanceCardProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface px-4 py-4">
+    <div className="glass flex items-center justify-between gap-4 rounded-2xl px-4 py-4">
       <div className="min-w-0">
         <span className="text-[11px] font-semibold tracking-wider text-indigo">
-          {sleepBalance.label}
+          {verdict.label}
         </span>
-        <h3 className="mt-1 font-display text-xl font-bold text-text">{sleepBalance.title}</h3>
+        <h3 className="mt-1 font-display text-xl font-bold text-text">{verdict.title}</h3>
         <p className="mt-1 max-w-[15rem] text-sm leading-relaxed text-text-muted">
-          {sleepBalance.text}
+          {verdict.text}
         </p>
       </div>
 

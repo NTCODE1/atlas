@@ -1,11 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { sleep, computeSleepScore } from '../data'
 import { fetchHealthData, fallbackHealthData } from './healthData'
-import { mapHealthData, type HealthData as MappedHealth } from './healthMapper'
+import { mapHealthData, mapMetricSeries, type HealthData as MappedHealth, type MetricPoint } from './healthMapper'
+
+/** HAE has exported VO2 max under both names depending on version/source. */
+const VO2_MAX_METRIC_NAMES = ['vo2_max', 'cardio_fitness']
 
 interface HealthContextValue {
   /** Mapped health values; each field is null when that metric isn't live. */
   health: MappedHealth
+  /** VO2 max readings over time, oldest first — for the Training Cardio tab trend. */
+  vo2MaxSeries: MetricPoint[]
   /** True when the data came from the API, false when running on bundled fallback. */
   isLive: boolean
   /** True until the initial fetch resolves. */
@@ -14,6 +18,7 @@ interface HealthContextValue {
 
 const HealthContext = createContext<HealthContextValue>({
   health: mapHealthData(null),
+  vo2MaxSeries: [],
   isLive: false,
   loading: true,
 })
@@ -26,6 +31,7 @@ const HealthContext = createContext<HealthContextValue>({
 export function HealthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<HealthContextValue>({
     health: mapHealthData(null),
+    vo2MaxSeries: [],
     isLive: false,
     loading: true,
   })
@@ -36,6 +42,7 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return
       setState({
         health: mapHealthData(raw),
+        vo2MaxSeries: mapMetricSeries(raw, VO2_MAX_METRIC_NAMES),
         isLive: raw !== fallbackHealthData,
         loading: false,
       })
@@ -51,17 +58,4 @@ export function HealthProvider({ children }: { children: ReactNode }) {
 /** Read the shared health data, live flag, and loading state. */
 export function useHealth(): HealthContextValue {
   return useContext(HealthContext)
-}
-
-/**
- * The single sleep score, computed from live stage minutes with per-field
- * fallback to the bundled `sleep` data. Used by both the Sleep ring and the
- * readiness formula so there's exactly one sleep score.
- */
-export function sleepScoreFromHealth(health: MappedHealth): number {
-  return computeSleepScore({
-    totalMinutes: health.sleepTotalMinutes ?? sleep.totalMinutes,
-    deepMinutes: health.sleepDeepMinutes ?? sleep.deepMinutes,
-    remMinutes: health.sleepRemMinutes ?? sleep.remMinutes,
-  })
 }

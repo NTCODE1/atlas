@@ -8,13 +8,13 @@ interface SleepStageBarProps {
 
 type StageKey = 'Deep' | 'Core' | 'REM' | 'Awake'
 
-// Solid colours pulled from the old hypnogram gradient so the summary keeps the
-// same Deep-blue → Awake-red identity. (Hypnogram.tsx defs#hyp-stage.)
+// Monochrome ramp, brightest (Deep) to dimmest (REM); Awake stays rose so the
+// disruptive stage still reads as an alert. Vars flip with the theme.
 const STAGE_COLOR: Record<StageKey, string> = {
-  Deep: '#5f9bff',
-  Core: '#7a82ff',
-  REM: '#c86bff',
-  Awake: '#ff6b81',
+  Deep: 'var(--color-accent)',
+  Core: 'var(--color-sky)',
+  REM: 'var(--color-cyan)',
+  Awake: 'var(--color-rose)',
 }
 
 // Deep → Awake = deepest to lightest; matches the bar's left-to-right fill.
@@ -57,7 +57,7 @@ export default function SleepStageBar({
       {/* Stacked proportion bar */}
       <div
         className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-surface-2"
-        style={{ filter: 'drop-shadow(0 0 4px rgba(150,120,255,0.35))' }}
+        style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.18))' }}
         role="img"
         aria-label="Proportion of each sleep stage across the night"
       >
