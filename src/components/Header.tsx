@@ -1,12 +1,28 @@
-import { Bell } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, User } from 'lucide-react'
 import { useHealth } from '../api/healthContext'
+import { useSettings } from '../settingsContext'
+import { useNotifications } from '../notificationContext'
+import NotificationPanel from './notifications/NotificationPanel'
+
+interface HeaderProps {
+  onOpenSettings: () => void
+}
 
 /**
- * App header: accent triangular ATLAS logo + wordmark on the left, a notification
- * bell with an unread dot on the right.
+ * App header: accent triangular ATLAS logo + wordmark on the left, a
+ * notification bell and the profile avatar (opens Settings) on the right.
  */
-export default function Header() {
+export default function Header({ onOpenSettings }: HeaderProps) {
   const { isLive } = useHealth()
+  const { avatar } = useSettings()
+  const { alerts, unreadCount, dismiss, markAllSeen } = useNotifications()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  const toggleNotifications = () => {
+    if (!notificationsOpen) markAllSeen()
+    setNotificationsOpen((open) => !open)
+  }
 
   return (
     <header className="flex items-center justify-between px-6 py-4">
@@ -18,19 +34,46 @@ export default function Header() {
           title={isLive ? 'Live data' : 'Using saved data'}
           aria-label={isLive ? 'Live data' : 'Using saved data'}
           className={`h-1.5 w-1.5 rounded-full transition-colors ${
-            isLive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]' : 'bg-white/25'
+            isLive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]' : 'bg-text-muted/50'
           }`}
         />
       </div>
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative grid h-10 w-10 place-items-center rounded-full text-text transition-colors hover:bg-surface"
-      >
-        <Bell size={22} strokeWidth={1.75} />
-        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent ring-2 ring-bg" />
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={toggleNotifications}
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+          className="press relative grid h-10 w-10 place-items-center rounded-full text-text transition-colors hover:bg-surface"
+        >
+          <Bell size={22} strokeWidth={1.75} />
+          {unreadCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold text-bg ring-2 ring-bg">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Settings"
+          className="press grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-border-strong bg-fill"
+        >
+          {avatar ? (
+            <img src={avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <User size={18} strokeWidth={1.75} className="text-text-muted" />
+          )}
+        </button>
+      </div>
+
+      {notificationsOpen && (
+        <NotificationPanel
+          alerts={alerts}
+          onDismiss={dismiss}
+          onClose={() => setNotificationsOpen(false)}
+        />
+      )}
     </header>
   )
 }
@@ -47,7 +90,7 @@ function AtlasMark() {
       viewBox="0 0 1024 684"
       fill="none"
       aria-hidden="true"
-      className="translate-y-[6px]"
+      className="atlas-mark translate-y-[6px]"
     >
       <defs>
         <radialGradient
@@ -58,10 +101,10 @@ function AtlasMark() {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(512 130) rotate(90) scale(175 155)"
         >
-          <stop offset="0" stopColor="#8FB2FF" stopOpacity="0.85" />
-          <stop offset="0.38" stopColor="#5B82FF" stopOpacity="0.42" />
-          <stop offset="0.68" stopColor="#2E5BFF" stopOpacity="0.16" />
-          <stop offset="1" stopColor="#2E5BFF" stopOpacity="0" />
+          <stop offset="0" stopColor="#E8EAEE" stopOpacity="0.85" />
+          <stop offset="0.38" stopColor="#B9BEC9" stopOpacity="0.42" />
+          <stop offset="0.68" stopColor="#868C98" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#868C98" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="atlasMainPeak" x1="512" y1="47" x2="512" y2="392" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#ECFFF9" />
@@ -89,10 +132,10 @@ function AtlasMark() {
           <feColorMatrix
             in="blur"
             type="matrix"
-            values="0 0 0 0 0.30
-                    0 0 0 0 0.45
-                    0 0 0 0 1.0
-                    0 0 0 0.68 0"
+            values="0 0 0 0 0.85
+                    0 0 0 0 0.88
+                    0 0 0 0 0.95
+                    0 0 0 0.55 0"
             result="accentBlur"
           />
           <feMerge>
