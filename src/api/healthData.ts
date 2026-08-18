@@ -9,12 +9,16 @@
  */
 
 import * as data from '../data'
+import { authHeaders, onUnauthorized } from '../auth/session'
 
 /** Loose shape: the API payload (from Health Auto Export) is arbitrary JSON. */
 export type HealthData = Record<string, unknown>
 
 /** Configurable Worker base URL, e.g. https://atlas-api.yourname.workers.dev */
 const API_BASE = import.meta.env.VITE_HEALTH_API_URL as string | undefined
+
+/** Low-privilege read/AI key the Worker requires on GET (matches ATLAS_API_KEY). */
+const API_KEY = import.meta.env.VITE_ATLAS_API_KEY as string | undefined
 
 /** How long to wait for the API before giving up and using bundled data. */
 const TIMEOUT_MS = 3000
@@ -28,7 +32,6 @@ export const fallbackHealthData: HealthData = {
   stats: data.stats,
   sleep: data.sleep,
   sleepStages: data.sleepStages,
-  sleepBalance: data.sleepBalance,
   nutrition: data.nutrition,
   meals: data.meals,
   micronutrients: data.micronutrients,
@@ -36,9 +39,6 @@ export const fallbackHealthData: HealthData = {
   upNext: data.upNext,
   todaysTarget: data.todaysTarget,
   hydration: data.hydration,
-  mood: data.mood,
-  deepWork: data.deepWork,
-  focus: data.focus,
 }
 
 /** True for anything that shouldn't replace real screen data: non-objects and empty objects/arrays. */
@@ -67,7 +67,17 @@ async function getJson(path: string): Promise<HealthData> {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const res = await fetch(buildUrl(API_BASE, path), { signal: controller.signal })
+    const res = await fetch(buildUrl(API_BASE, path), {
+      signal: controller.signal,
+      headers: {
+        ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        ...authHeaders(),
+      },
+    })
+    if (res.status === 401) {
+      // Passkey session missing/expired — re-lock the app, then fall back.
+      onUnauthorized()
+    }
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`)
     }
@@ -93,4 +103,14 @@ export function fetchHealthData(): Promise<HealthData> {
 /** GET /api/health/:date — the payload for a specific YYYY-MM-DD. */
 export function fetchHealthDataForDate(date: string): Promise<HealthData> {
   return getJson(`/api/health/${encodeURIComponent(date)}`)
+}
+
+/** GET /api/workouts — the latest stored Workouts+Routes payload. */
+export function fetchWorkoutsData(): Promise<HealthData> {
+  return getJson('/api/workouts')
+}
+
+/** GET /api/workouts/:date — the workout payload for a specific YYYY-MM-DD. */
+export function fetchWorkoutsDataForDate(date: string): Promise<HealthData> {
+  return getJson(`/api/workouts/${encodeURIComponent(date)}`)
 }
