@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
     "@tailwindcss/vite": "^4.3.1",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
@@ -23,6 +25,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.69.0",
+    "sharp": "^0.35.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.0"
   }

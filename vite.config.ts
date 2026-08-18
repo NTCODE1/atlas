@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      // Precache the assistant orb video (small) alongside the default globs so
+      // it loads instantly and works offline.
+      workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,mp4}'] },
       manifest: {
         name: 'Atlas',
         short_name: 'Atlas',
