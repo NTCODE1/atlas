@@ -2,8 +2,10 @@
 
 /* ---------------------------------------------------------------------------
    Atlas design system
-   Dark, premium. Near-black canvas, barely-lighter card surfaces with hairline
-   borders, four accent colours. Inter for body, Space Grotesk for big numbers.
+   Monochrome, premium. Near-black canvas, barely-lighter card surfaces with
+   hairline borders, white/grey accents. Colour is reserved for meaning:
+   water blue, macro rings, meal-search rainbow, amber importance, rose alerts.
+   Light theme = the :root[data-theme='light'] override block below.
 --------------------------------------------------------------------------- */
 @theme {
   /* Surfaces */
@@ -11,27 +13,62 @@
   --color-surface: #15171e;
   --color-surface-2: #1b1e27;
   --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Translucent fills for nested tiles/tracks (theme-aware, replaces bg-white/N) */
+  --color-fill: rgba(255, 255, 255, 0.05);
+  --color-fill-2: rgba(255, 255, 255, 0.09);
 
   /* Text */
   --color-text: #f5f6f8;
   --color-text-muted: #8a8f9a;
 
-  /* Accents */
-  /* Primary accent — royal blue. accent-bright is used for ring/bar glows. */
-  --color-accent: #2e5bff;
-  --color-accent-bright: #5b82ff;
-  /* Secondary blues (sparing highlights + page gradients). */
-  --color-sky: #00a4ff;
-  --color-cyan: #00e7ff;
-  --color-royal: #1e466b;
-  --color-navy: #04044a;
-  /* Retained: Sleep identity (indigo) and semantic alert/destructive (rose). */
-  --color-indigo: #8a93ff;
+  /* Accents — monochrome ramp, brightest to darkest. */
+  --color-accent: #f2f3f5;
+  --color-accent-bright: #ffffff;
+  --color-sky: #c7cbd4;
+  --color-cyan: #9aa0ab;
+  --color-royal: #3a3f4a;
+  --color-navy: #14161c;
+  /* Sleep identity — light grey in the mono ramp. */
+  --color-indigo: #d3d6dd;
+  /* Semantic alert/destructive — deliberately kept coloured. */
   --color-rose: #ff6b81;
+
+  /* Glass panels */
+  --color-glass: rgba(20, 22, 30, 0.55);
+  --color-glass-strong: rgba(16, 18, 26, 0.7);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Type */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+}
+
+/* Light theme — manual toggle only (Settings), applied via data-theme on <html>.
+   Same monochrome ramp, inverted: light surfaces, near-black accent. */
+:root[data-theme='light'] {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #eceef2;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.13);
+  --color-fill: rgba(0, 0, 0, 0.04);
+  --color-fill-2: rgba(0, 0, 0, 0.08);
+  --color-text: #16181d;
+  --color-text-muted: #6a707c;
+  --color-accent: #16181d;
+  --color-accent-bright: #000000;
+  --color-sky: #4a4f5a;
+  --color-cyan: #6a707c;
+  --color-royal: #c7cbd4;
+  --color-navy: #e4e6eb;
+  --color-indigo: #3a3f4a;
+  --color-glass: rgba(255, 255, 255, 0.55);
+  --color-glass-strong: rgba(255, 255, 255, 0.72);
 }
 
 html,
@@ -55,11 +92,19 @@ body {
   border: 1px solid var(--color-border);
 }
 
-/* Subtle cool glow for big hero numbers. */
+/* The white mountain mark needs an edge to read on light surfaces. */
+:root[data-theme='light'] .atlas-mark {
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+}
+
+/* Subtle glow for big hero numbers — soft white on dark, whisper on light. */
 .num-glow {
   text-shadow:
-    0 0 18px rgba(91, 130, 255, 0.3),
-    0 0 4px rgba(91, 130, 255, 0.18);
+    0 0 18px rgba(255, 255, 255, 0.22),
+    0 0 4px rgba(255, 255, 255, 0.12);
+}
+:root[data-theme='light'] .num-glow {
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Hide scrollbars (e.g. the horizontally scrollable tab bar) */
@@ -71,9 +116,212 @@ body {
   display: none;
 }
 
-/* Subtle navy-deepening gradient for hero cards. */
+/* Subtle deepening gradient for hero cards. */
 .card-grad {
-  background-image: linear-gradient(160deg, var(--color-surface) 0%, #0b1330 100%);
+  background-image: linear-gradient(160deg, var(--color-surface) 0%, #101218 100%);
+}
+:root[data-theme='light'] .card-grad {
+  background-image: linear-gradient(160deg, #ffffff 0%, #eef0f4 100%);
+}
+
+/* ---------------------------------------------------------------------------
+   Glass system — three tiers. Blur is expensive, so only top-level panels
+   (.glass / .glass-strong) get backdrop-filter; nested tiles use .glass-subtle.
+   Radius is left to rounded-* utilities so each card keeps its shape.
+--------------------------------------------------------------------------- */
+.glass {
+  background-color: var(--color-glass);
+  /* Specular sheen: soft light refraction falling from the top edge. */
+  background-image: radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 60%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
+  backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Near shadow + far ambient + light top / dark bottom insets = depth. */
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.18),
+    0 12px 36px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* Heavier "liquid glass" pane for nav, sheets, and overlays — deeper blur and
+   saturation so content refracts through it, with a brighter top edge. */
+.glass-strong {
+  background-color: var(--color-glass-strong);
+  background-image: radial-gradient(130% 80% at 50% -20%, rgba(255, 255, 255, 0.1), transparent 62%);
+  -webkit-backdrop-filter: blur(30px) saturate(185%) brightness(1.06);
+  backdrop-filter: blur(30px) saturate(185%) brightness(1.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.25),
+    0 18px 48px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Nested tiles/rows inside a glass panel — translucent, no blur (perf). */
+.glass-subtle {
+  background-color: var(--color-fill);
+  border: 1px solid var(--color-border);
+}
+
+/* Hero-card variant: keeps the deepening gradient under the glass. */
+.card-grad-glass {
+  background-image:
+    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(160deg, rgba(21, 23, 30, 0.55) 0%, rgba(13, 14, 19, 0.6) 100%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
+  backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.18),
+    0 12px 36px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* Light-theme glass: dark hairlines, soft grey shadows, gentler sheen. */
+:root[data-theme='light'] .glass,
+:root[data-theme='light'] .glass-strong,
+:root[data-theme='light'] .card-grad-glass {
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 12px 36px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+:root[data-theme='light'] .card-grad-glass {
+  background-image:
+    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.6), transparent 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.6) 0%, rgba(236, 238, 244, 0.65) 100%);
+}
+
+/* Without backdrop-filter support the translucent panes ghost the content
+   behind them — fall back to near-opaque surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .card-grad-glass {
+    background-color: rgba(20, 22, 30, 0.96);
+  }
+  .glass-strong {
+    background-color: rgba(16, 18, 26, 0.98);
+  }
+  :root[data-theme='light'] .glass,
+  :root[data-theme='light'] .card-grad-glass {
+    background-color: rgba(255, 255, 255, 0.96);
+  }
+  :root[data-theme='light'] .glass-strong {
+    background-color: rgba(255, 255, 255, 0.98);
+  }
+}
+
+/* Tap feedback: a clean, quick scale — no bounce, no flash. */
+.press {
+  transition: transform 0.2s var(--ease-out-soft);
+}
+.press:active {
+  transform: scale(0.96);
+}
+
+/* Liquid-glass sliding pill behind the active bottom-nav tab. Its own
+   backdrop-filter lenses (brightens + saturates) the content behind it, so it
+   reads like a frosted glass capsule. Position/width are set inline; the spring
+   transition makes it glide between tabs. */
+.tab-pill {
+  border-radius: 18px;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: brightness(1.18) saturate(1.3);
+  backdrop-filter: brightness(1.18) saturate(1.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.22),
+    0 6px 16px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.5s var(--ease-spring),
+    width 0.5s var(--ease-spring);
+}
+:root[data-theme='light'] .tab-pill {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
+  border-color: rgba(0, 0, 0, 0.08);
+  -webkit-backdrop-filter: brightness(1.06) saturate(1.15);
+  backdrop-filter: brightness(1.06) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Screen enter: a soft, simple fade + rise when switching tabs. */
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.screen-enter {
+  animation: screen-in 0.4s var(--ease-out-soft) both;
+}
+
+/* Bottom sheet: a gentle short rise + fade (not a full-height slide). */
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-enter {
+  animation: sheet-up 0.32s var(--ease-out-soft) both;
+}
+@keyframes backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.backdrop-enter {
+  animation: backdrop-fade 0.25s ease-out both;
+}
+
+/* Settings overlay slide-in from the right. */
+@keyframes panel-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.panel-enter-right {
+  animation: panel-in-right 0.34s var(--ease-out-soft) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press:active {
+    transition: none;
+    transform: none;
+    filter: none;
+  }
+  .tab-pill {
+    transition: none;
+  }
+  .screen-enter,
+  .sheet-enter,
+  .backdrop-enter,
+  .panel-enter-right {
+    animation: none;
+  }
 }
 
 /* Looping water waves (two seamless periods in a 1200-wide path). */
@@ -107,6 +355,46 @@ body {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Assistant orb — a looping video masked to a circle. A gentle breathing scale
+   on the wrapper (and reused by the "thinking" dots) makes it feel alive.
+   Colours are a deliberate exception to the mono system.
+--------------------------------------------------------------------------- */
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+.orb-breathe {
+  animation: orb-breathe 6s var(--ease-out-soft) infinite;
+}
+
+/* Chat bubble entrance — a soft fade + rise, one-shot per message. */
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.message-in {
+  animation: message-in 0.32s var(--ease-out-soft) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-breathe,
+  .message-in {
+    animation: none;
+  }
+}
+
 /* Readiness ring sweep-in: arc draws from empty to its target offset on load. */
 @keyframes ring-sweep {
   from {
@@ -121,8 +409,11 @@ body {
   stroke-dashoffset: var(--target-offset);
   animation: ring-sweep 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   /* Shape-aware glow that follows the stroke (no boxy filter region). */
-  filter: drop-shadow(0 0 5px rgba(91, 130, 255, 0.55))
-    drop-shadow(0 0 12px rgba(91, 130, 255, 0.35));
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4))
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.22));
+}
+:root[data-theme='light'] .ring-arc {
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.18));
 }
 
 @media (prefers-reduced-motion: reduce) {

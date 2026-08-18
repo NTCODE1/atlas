@@ -2,6 +2,8 @@
  * Hard-coded fake data for the Atlas Home screen.
  * This stands in for real integrations — everything the UI renders comes from here.
  */
+import type { IconId } from './icons'
+import type { MicroAmounts } from './micros'
 
 export const user = {
   greeting: 'Good morning',
@@ -18,139 +20,55 @@ export function formatToday(date = new Date()): string {
 
 export const readiness = {
   score: 78,
-  label: 'PRIMED',
+  label: 'Good',
   verdict: 'HRV up, well slept, caffeine clear — a good day to push the hard session.',
-}
-
-/**
- * Readiness scoring formula. Blends five daily signals into a 0–100 score:
- *   readiness = 0.35·hrv + 0.25·sleep + 0.15·rhr + 0.15·strain − 0.10·caffeine_drag
- *
- * Each positive signal is normalized to a 0–100 sub-score against a target/range;
- * caffeine is a *drag* subtracted from the total. The positive weights sum to
- * 0.90, so a perfect, caffeine-clear day caps near 90 — that's intentional.
- * Tweak the targets and weights freely — a sensible starting point, not a
- * clinical model.
- */
-export const READINESS = {
-  /** Sub-score weights. Positives sum to 0.90; caffeine is subtracted as a drag. */
-  weights: { hrv: 0.35, sleep: 0.25, restingHr: 0.15, strain: 0.15, caffeine: 0.1 },
-  /** HRV (ms) that scores 100; higher is better. */
-  hrvTargetMs: 80,
-  /** Resting HR band (bpm): restingHrBest scores 100, restingHrWorst scores 0. */
-  restingHrBest: 48,
-  restingHrWorst: 75,
-  /** Caffeine (mg) at which the caffeine drag hits 100; 0 mg → 0 drag. */
-  caffeineZeroMg: 400,
-}
-
-/**
- * Hard-coded contributor fallbacks, used when a live value is absent. Only the
- * sleep contributor is computed live (via computeSleepScore); the rest fall back
- * here until their metrics are wired up.
- */
-export const readinessFallback = {
-  hrvMs: 68, // matches the HRV stat tile
-  restingHr: 58, // matches sleep.lowestRestingHr
-  strainScore: 72, // 0-100 training-load recovery sub-score; hard-coded until live data
-  caffeineMg: 0, // caffeine clear
 }
 
 const clamp01to100 = (n: number) => Math.max(0, Math.min(100, n))
 
-export type ReadinessContributor = 'hrv' | 'sleep' | 'restingHr' | 'strain' | 'caffeine'
-
-export interface ReadinessResult {
-  /** Final 0–100 readiness score. */
-  score: number
-  /** Per-contributor 0–100 health (higher = better), for the verdict. */
-  subScores: Record<ReadinessContributor, number>
-  /** The contributor with the lowest health sub-score. */
-  weakest: ReadinessContributor
-}
-
 /**
- * Compute readiness from a mix of live/fallback contributors. The sleep input is
- * the 0–100 sleep score (not minutes); caffeine is given in mg and converted to
- * a drag. Returns the score plus the per-contributor breakdown and weakest link.
+ * Linear ramp scoring a value against a personal rolling baseline: 100 at/past
+ * the baseline in the good direction, falling to 0 at `band` distance beyond
+ * it in the bad direction. Shared by HRV-vs-baseline, RHR-vs-baseline, and
+ * sleep's bedtime-consistency factor so the ramp math isn't duplicated.
+ *
+ * `direction: 'higherIsBetter'` — e.g. HRV: at/above baseline scores 100,
+ * `band` below baseline scores 0.
+ * `direction: 'lowerIsBetter'` — e.g. RHR/bedtime drift: at/below baseline
+ * scores 100, `band` above baseline scores 0.
  */
-export function computeReadiness(input: {
-  hrv: number
-  sleepScore: number
-  restingHr: number
-  /** 0–100 training-load recovery sub-score. */
-  strain: number
-  caffeineMg: number
-}): ReadinessResult {
-  const { weights: w } = READINESS
-
-  // HRV: higher is better, capped at the target.
-  const hrvScore = clamp01to100((input.hrv / READINESS.hrvTargetMs) * 100)
-  // Sleep: the sleep score is already a 0–100 sub-score.
-  const sleepScore = clamp01to100(input.sleepScore)
-  // Resting HR: lower is better, mapped across the best→worst band (inverted).
-  const rhrScore = clamp01to100(
-    ((READINESS.restingHrWorst - input.restingHr) /
-      (READINESS.restingHrWorst - READINESS.restingHrBest)) *
-      100,
-  )
-  // Strain: already a 0–100 recovery sub-score.
-  const strainScore = clamp01to100(input.strain)
-  // Caffeine: a drag. 0 mg → 0 drag, caffeineZeroMg → 100 drag.
-  const caffeineDrag = clamp01to100((input.caffeineMg / READINESS.caffeineZeroMg) * 100)
-
-  const score = clamp01to100(
-    Math.round(
-      hrvScore * w.hrv +
-        sleepScore * w.sleep +
-        rhrScore * w.restingHr +
-        strainScore * w.strain -
-        caffeineDrag * w.caffeine,
-    ),
-  )
-
-  // Health sub-scores (higher = better); caffeine expressed as 100 − drag.
-  const subScores: Record<ReadinessContributor, number> = {
-    hrv: hrvScore,
-    sleep: sleepScore,
-    restingHr: rhrScore,
-    strain: strainScore,
-    caffeine: 100 - caffeineDrag,
-  }
-  const weakest = (Object.keys(subScores) as ReadinessContributor[]).reduce((a, b) =>
-    subScores[a] <= subScores[b] ? a : b,
-  )
-
-  return { score, subScores, weakest }
-}
-
-/** Verdict copy per contributor when it's the weakest link. */
-const WEAKEST_VERDICT: Record<ReadinessContributor, string> = {
-  hrv: 'HRV is your weak link today — keep efforts moderate and let your nervous system settle.',
-  sleep: 'Sleep is dragging readiness down — favour recovery over a hard session.',
-  restingHr: 'Resting heart rate is elevated — your body is still catching up on recovery.',
-  strain: 'Recent training load is high — keep it easy so you can absorb the work.',
-  caffeine: 'Caffeine is still in your system and may be masking your true readiness.',
+export function baselineDeviationScore(
+  value: number,
+  baseline: number,
+  band: number,
+  direction: 'higherIsBetter' | 'lowerIsBetter',
+): number {
+  const deviation = direction === 'higherIsBetter' ? value - baseline : baseline - value
+  if (deviation >= 0) return 100
+  return clamp01to100(100 + (deviation / band) * 100)
 }
 
 /**
- * Verdict text for the readiness ring. When even the weakest contributor is
- * strong (≥ 80) everything's firing; otherwise name the weakest link.
+ * Score a value against a fixed healthy range: 100 anywhere inside [low, high],
+ * falling off linearly outside EITHER bound, hitting 0 at `zeroDistance` past
+ * it. Used for HRV, which (unlike RHR) doesn't just get "better" the higher it
+ * goes — a reading well above your normal range can signal something's off
+ * just as much as one well below it. Unlike a rolling personal baseline, this
+ * needs no history — it's usable from day one.
  */
-export function readinessVerdict(result: ReadinessResult): string {
-  if (result.subScores[result.weakest] >= 80) {
-    return 'Everything’s firing — a great day to push the hard session.'
-  }
-  return WEAKEST_VERDICT[result.weakest]
+export function rangeDeviationScore(value: number, low: number, high: number, zeroDistance: number): number {
+  if (value >= low && value <= high) return 100
+  const distance = value < low ? low - value : value - high
+  return clamp01to100(100 - (distance / zeroDistance) * 100)
 }
 
 /**
- * Sleep score config. Weighted toward sleep architecture, not just duration.
- * Tune the weights, target, and architecture band/falloff freely.
+ * Sleep score config — Garmin-style: duration and stage architecture dominate,
+ * overnight HRV stress and interruptions matter a little, bedtime consistency
+ * matters least (quality over timing). Weights sum to 1.
  */
 export const SLEEP_SCORE = {
-  /** Component weights (sum to 1). */
-  weights: { duration: 0.5, architecture: 0.5 },
+  weights: { duration: 0.35, architecture: 0.35, hrvStress: 0.1, interruptions: 0.1, timing: 0.1 },
   /** Total sleep (minutes) that scores 100; capped, so >target adds nothing. 480 = 8h. */
   durationTargetMin: 480,
   /** Duration curve steepness: score = (actual/target)^exp · 100. >1 punishes short nights. */
@@ -159,41 +77,87 @@ export const SLEEP_SCORE = {
   deepRange: [0.13, 0.23] as const,
   /** Healthy REM share of total sleep [low, high]; score peaks at the midpoint (22.5%). */
   remRange: [0.2, 0.25] as const,
-  /** Distance (share of total) from a stage's midpoint at which that stage scores 0. Smaller = stricter. */
-  archZeroDistance: 0.5,
+  /**
+   * Distance (share of total) from a stage's midpoint at which that stage scores 0.
+   * 0.225 matches REM's midpoint (22.5%), so 0% REM — the worst real case — scores 0
+   * instead of floor-ing in the 50s under the old, too-generous 0.5.
+   */
+  archZeroDistance: 0.225,
+  /** Distance (ms) outside the user's healthy HRV range at which the stress sub-score hits 0. */
+  hrvZeroDistanceMs: 20,
+  /** Awake-minutes fraction of time-in-bed at which the interruptions sub-score hits 0. No
+   *  discrete wake-count exists in the HAE payload, so this fraction is the closest proxy. */
+  awakeFractionZero: 0.15,
+  /** Bedtime drift from personal baseline (minutes) at which the timing sub-score hits 0. */
+  bedtimeDriftBandMin: 90,
+  /**
+   * Score used for a sub-component when there's genuinely no data to judge it
+   * by yet (no HRV baseline, no bedtime baseline, no awake reading) — deliberately
+   * short of a perfect 100, since "unmeasured" isn't the same as "excellent".
+   */
+  noDataNeutralScore: 75,
 }
 
 /**
- * Compute a 0–100 sleep score from a night's stage minutes.
+ * Compute a 0–100 sleep score for one night. Quality (duration + architecture
+ * + HRV stress + interruptions = 90%) outweighs timing (bedtime consistency,
+ * 10%) by design. Baseline/optional inputs default to a neutral 100 for that
+ * sub-component when absent (not enough history yet, or metric not enabled).
  *
- *   sleepScore = 0.5·duration + 0.5·architecture
+ *   sleepScore = 0.35·duration + 0.35·architecture + 0.1·hrvStress + 0.1·interruptions + 0.1·timing
  *
- *   • duration (50%):     min(total / 480, 1) ^ 1.5 · 100 — a steep power curve,
- *                         capped at 100, that drops off fast for short nights:
- *                         5h→49, 5h42m→60, 6h→65, 7h→82, 8h→100.
- *   • architecture (50%): deep and REM scored SEPARATELY against their own
- *                         healthy ranges (deep 13–23%, REM 20–25%), then averaged
- *                         — so a weak REM isn't masked by a strong deep. Each
- *                         stage peaks (100) at its range midpoint and falls
- *                         linearly to 0 at `archZeroDistance` from it.
+ *   • duration (35%):       min(total / 480, 1) ^ 1.5 · 100 · efficiency — steep
+ *                           power curve, capped at 100, then scaled by sleep
+ *                           efficiency (asleep ÷ time-in-bed) so extra time
+ *                           spent awake still costs you even once you've hit
+ *                           the 8h target: 5h→49, 5h42m→60, 6h→65, 7h→82, 8h→100
+ *                           (all at 100% efficiency; less if there was awake time).
+ *   • architecture (35%):   deep and REM scored SEPARATELY against their own
+ *                           healthy ranges (deep 13–23%, REM 20–25%), then
+ *                           averaged — a weak REM isn't masked by a strong deep.
+ *   • hrvStress (10%):      overnight HRV (same-day average, since HAE has no
+ *                           sleep-window-only HRV) vs your healthy range — 100
+ *                           inside it, falling to 0 at 20ms past either bound.
+ *   • interruptions (10%):  awake minutes as a fraction of time-in-bed — 0%
+ *                           awake scores 100, falling to 0 at a 15% fraction.
+ *   • timing (10%):         bedtime drift from your personal rolling average
+ *                           bedtime — on-time scores 100, falling to 0 at 90min drift.
  *
- *   Worked example — 5h42m, 29% deep / 11% REM:
- *     duration     = (342/480)^1.5·100         = 60
- *     deep         = 100 − |0.29−0.18|/0.5·100  = 78
- *     rem          = 100 − |0.11−0.225|/0.5·100 = 77
- *     architecture = (78 + 77) / 2              = 77.5
- *     sleepScore   = 0.5·60 + 0.5·77.5          = 69   (was 86 under the old formula)
+ *   Sub-components with no data to judge yet (no HRV/bedtime baseline, or no
+ *   awake reading) score `noDataNeutralScore` (75) rather than a perfect 100 —
+ *   "unmeasured" isn't the same as "excellent".
+ *
+ *   Worked example — 5h42m, 29% deep / 11% REM, no HRV/awake/bedtime data yet:
+ *     duration     = (342/480)^1.5·100·1          = 60  (efficiency=1, no awake data)
+ *     deep         = 100 − |0.29−0.18|/0.225·100  = 51
+ *     rem          = 100 − |0.11−0.225|/0.225·100 = 49
+ *     architecture = (51 + 49) / 2                = 50
+ *     hrvStress = interruptions = timing          = 75 (no data yet — neutral)
+ *     sleepScore = 0.35·60 + 0.35·50 + 0.1·75 + 0.1·75 + 0.1·75 = 61
  */
 export function computeSleepScore(input: {
   totalMinutes: number
   deepMinutes: number
   remMinutes: number
+  awakeMinutes?: number | null
+  hrv?: number | null
+  hrvRangeLowMs: number
+  hrvRangeHighMs: number
+  bedtimeMinutes?: number | null
+  bedtimeBaseline?: number | null
 }): number {
-  const { weights: w } = SLEEP_SCORE
+  const { weights: w, noDataNeutralScore } = SLEEP_SCORE
 
-  // Duration component: steep power curve vs the 8h target, capped at 100.
+  // Duration component: steep power curve vs the 8h target, capped at 100 —
+  // then scaled by sleep efficiency (asleep ÷ time-in-bed) so hitting the
+  // target only because of extra time spent awake in bed doesn't score the
+  // same as a clean, uninterrupted night. No awake data yet → efficiency
+  // defaults to 1 (neutral, doesn't penalize).
+  const timeInBed = input.totalMinutes + (input.awakeMinutes ?? 0)
+  const efficiency =
+    input.awakeMinutes != null && timeInBed > 0 ? input.totalMinutes / timeInBed : 1
   const ratio = Math.min(input.totalMinutes / SLEEP_SCORE.durationTargetMin, 1)
-  const durationScore = clamp01to100(ratio ** SLEEP_SCORE.durationExponent * 100)
+  const durationScore = clamp01to100(ratio ** SLEEP_SCORE.durationExponent * 100 * efficiency)
 
   // Architecture component: per-stage closeness to the midpoint of its own range.
   const stageScore = (minutes: number, [low, high]: readonly [number, number]) => {
@@ -206,9 +170,146 @@ export function computeSleepScore(input: {
   const remScore = stageScore(input.remMinutes, SLEEP_SCORE.remRange)
   const architectureScore = (deepScore + remScore) / 2
 
+  // HRV stress: overnight (same-day-average) HRV vs the user's healthy range —
+  // no baseline history needed, unlike the old personal-baseline approach.
+  const hrvStressScore =
+    input.hrv != null
+      ? rangeDeviationScore(input.hrv, input.hrvRangeLowMs, input.hrvRangeHighMs, SLEEP_SCORE.hrvZeroDistanceMs)
+      : noDataNeutralScore
+
+  // Interruptions: awake minutes as a fraction of time-in-bed (timeInBed computed above).
+  const interruptionsScore =
+    input.awakeMinutes != null && timeInBed > 0
+      ? clamp01to100(100 - (input.awakeMinutes / timeInBed / SLEEP_SCORE.awakeFractionZero) * 100)
+      : noDataNeutralScore
+
+  // Timing: bedtime drift from the personal rolling-average bedtime.
+  const timingScore =
+    input.bedtimeMinutes != null && input.bedtimeBaseline != null
+      ? 100 -
+        Math.min(
+          Math.abs(input.bedtimeMinutes - input.bedtimeBaseline) / SLEEP_SCORE.bedtimeDriftBandMin,
+          1,
+        ) *
+          100
+      : noDataNeutralScore
+
   return clamp01to100(
-    Math.round(durationScore * w.duration + architectureScore * w.architecture),
+    Math.round(
+      durationScore * w.duration +
+        architectureScore * w.architecture +
+        hrvStressScore * w.hrvStress +
+        interruptionsScore * w.interruptions +
+        timingScore * w.timing,
+    ),
   )
+}
+
+/** Sleep score bucket label, per the given thresholds. */
+export function sleepScoreLabel(score: number): string {
+  if (score >= 90) return 'Excellent'
+  if (score >= 80) return 'Good'
+  if (score >= 60) return 'Fair'
+  return 'Poor'
+}
+
+/**
+ * Readiness scoring formula. Blends three recovery-science pillars into a
+ * 0–100 score, plus a small caffeine boost on top:
+ *
+ *   readiness = 0.5·sleep + 0.3·recovery + 0.2·activity + 0.05·caffeineBoost
+ *
+ * Each pillar is a pre-computed 0–100 sub-score (the baseline/history math
+ * that produces them lives in useReadiness.ts + dailySnapshot.ts, keeping this
+ * function a simple, pure, testable blend). Caffeine is a *boost*, not a
+ * drag — logging caffeine nudges readiness up a little, capped at +5 points,
+ * with the total clamped to 100.
+ */
+export const READINESS = {
+  /** sleep+recovery+activity sum to 1; caffeineBoost is additive on top. */
+  weights: { sleep: 0.5, recovery: 0.3, activity: 0.2, caffeineBoost: 0.05 },
+  /** Caffeine (mg) at which the boost hits its +5pt cap; 0 mg → 0 boost. */
+  caffeineFullBoostMg: 200,
+}
+
+export type ReadinessContributor = 'sleep' | 'recovery' | 'activity' | 'caffeine'
+
+export interface ReadinessResult {
+  /** Final 0–100 readiness score. */
+  score: number
+  /** Per-contributor 0–100 health (higher = better), for the verdict. */
+  subScores: Record<ReadinessContributor, number>
+  /** The contributor with the lowest health sub-score. */
+  weakest: ReadinessContributor
+}
+
+/**
+ * Compute readiness from the three pre-computed pillar sub-scores plus
+ * caffeine mg. Returns the score plus the per-contributor breakdown and
+ * weakest link (caffeine is excluded from "weakest" since it's a boost, not
+ * a health signal — it can't be the thing dragging readiness down).
+ */
+export function computeReadiness(input: {
+  /** Blended: mostly tonight's sleep quality score, partly recent sleep debt. */
+  sleepScore: number
+  /** avg(HRV-vs-baseline, RHR-vs-baseline). */
+  recoveryScore: number
+  /** ACWR-derived: recent training strain vs long-term capacity. */
+  activityScore: number
+  caffeineMg: number
+}): ReadinessResult {
+  const { weights: w } = READINESS
+
+  const sleepScore = clamp01to100(input.sleepScore)
+  const recoveryScore = clamp01to100(input.recoveryScore)
+  const activityScore = clamp01to100(input.activityScore)
+  const caffeineBoost = clamp01to100((input.caffeineMg / READINESS.caffeineFullBoostMg) * 100)
+
+  const score = clamp01to100(
+    Math.round(
+      sleepScore * w.sleep +
+        recoveryScore * w.recovery +
+        activityScore * w.activity +
+        caffeineBoost * w.caffeineBoost,
+    ),
+  )
+
+  const subScores: Record<ReadinessContributor, number> = {
+    sleep: sleepScore,
+    recovery: recoveryScore,
+    activity: activityScore,
+    caffeine: caffeineBoost,
+  }
+  const weakest = (['sleep', 'recovery', 'activity'] as const).reduce((a, b) =>
+    subScores[a] <= subScores[b] ? a : b,
+  )
+
+  return { score, subScores, weakest }
+}
+
+/** Readiness score bucket label, per the given thresholds. */
+export function readinessLabel(score: number): string {
+  if (score >= 85) return 'Optimal'
+  if (score >= 70) return 'Good'
+  return 'Strained'
+}
+
+/** Verdict copy per contributor when it's the weakest link. */
+const WEAKEST_VERDICT: Record<Exclude<ReadinessContributor, 'caffeine'>, string> = {
+  sleep: 'Sleep is dragging readiness down — favour recovery over a hard session.',
+  recovery: 'HRV/resting HR are off your baseline — your body is still catching up on recovery.',
+  activity: 'Recent training load is high relative to your normal — keep it easy so you can absorb the work.',
+}
+
+/**
+ * Verdict text for the readiness ring. When even the weakest contributor is
+ * strong (≥ 80) everything's firing; otherwise name the weakest link.
+ */
+export function readinessVerdict(result: ReadinessResult): string {
+  if (result.subScores[result.weakest] >= 80) {
+    return 'Everything’s firing — a great day to push the hard session.'
+  }
+  return WEAKEST_VERDICT[result.weakest as Exclude<ReadinessContributor, 'caffeine'>]
 }
 
 export interface Stat {
@@ -227,6 +328,12 @@ export interface Stat {
   spark: number[]
 }
 
+/**
+ * Fallback stat tiles for when there's no live health data at all yet. No
+ * fake trend/spark here — Home.tsx computes those from real history
+ * (atlas.snapshots) once it exists, and falls back to `sub` otherwise rather
+ * than inventing a percent change or sparkline.
+ */
 export const stats: Stat[] = [
   {
     label: 'SLEEP',
@@ -234,24 +341,22 @@ export const stats: Stat[] = [
     unit: 'h',
     value2: '42',
     unit2: 'm',
-    trend: '12%',
-    trendDir: 'up',
-    spark: [5, 6, 4, 7, 6, 8, 7],
+    sub: 'no data yet',
+    spark: [],
   },
   {
     label: 'HRV',
     value: '68',
     unit: 'ms',
-    trend: '6',
-    trendDir: 'up',
-    spark: [4, 5, 4, 6, 5, 7, 8],
+    sub: 'no data yet',
+    spark: [],
   },
   {
     label: 'CAFFEINE',
     value: '0',
     unit: 'mg',
     sub: 'clear',
-    spark: [8, 7, 6, 4, 3, 1, 0],
+    spark: [],
   },
 ]
 
@@ -261,21 +366,6 @@ export const activity = {
   steps: 8231,
   activeKcal: 437,
   avgHeartRate: 62, // bpm
-}
-
-export const focus = {
-  title: 'Zone-2 Run · 45 min',
-  tag: 'From training plan',
-}
-
-export const deepWork = {
-  value: '3',
-  unit: 'h',
-  value2: '15',
-  unit2: 'm',
-  goal: 'of 4h goal',
-  /** 0–1 completion. */
-  progress: 0.81,
 }
 
 export const hydration = {
@@ -289,10 +379,12 @@ export const hydration = {
   percent: 64,
 }
 
-export const mood = {
-  label: 'CURRENT MOOD',
-  value: 'Focused',
-}
+/**
+ * Sample daily hydration (litres) for the current week, Mon→Sun. Fallback for
+ * the hydration-average widget on days without a real snapshot yet, so the
+ * weekly chart reads well before history accrues.
+ */
+export const hydrationWeek = [2.1, 1.8, 1.5, 2.3, 2.6, 1.9, 1.4]
 
 // --- Sleep screen ------------------------------------------------------------
 
@@ -317,10 +409,68 @@ export const sleep = {
   lowestRestingHr: 58, // bpm
 }
 
-export const sleepBalance = {
-  label: 'SLEEP BALANCE',
-  title: 'Restorative',
-  text: 'Great mix of deep and REM. Your body and mind got the recovery they needed.',
+export interface SleepBalanceVerdict {
+  label: string
+  title: string
+  text: string
+}
+
+/**
+ * Real "sleep balance" verdict from tonight's actual deep/REM shares — compares
+ * each stage's share of total sleep against its healthy range (same ranges
+ * computeSleepScore's architecture component uses) and describes what
+ * actually happened, rather than a fixed message that never changes.
+ */
+export function computeSleepBalance(
+  deepMinutes: number,
+  remMinutes: number,
+  totalMinutes: number,
+): SleepBalanceVerdict {
+  const label = 'SLEEP BALANCE'
+  if (totalMinutes <= 0) {
+    return { label, title: 'No data', text: 'Not enough sleep data yet to judge deep/REM balance.' }
+  }
+
+  const deepPct = deepMinutes / totalMinutes
+  const remPct = remMinutes / totalMinutes
+  const [deepLow, deepHigh] = SLEEP_SCORE.deepRange
+  const [remLow, remHigh] = SLEEP_SCORE.remRange
+  const deepStatus: 'low' | 'good' | 'high' = deepPct < deepLow ? 'low' : deepPct > deepHigh ? 'high' : 'good'
+  const remStatus: 'low' | 'good' | 'high' = remPct < remLow ? 'low' : remPct > remHigh ? 'high' : 'good'
+
+  if (deepStatus === 'low' && remStatus === 'low') {
+    return {
+      label,
+      title: 'Light night',
+      text: 'Both deep and REM ran short tonight — physical and mental recovery were limited. An earlier night would help.',
+    }
+  }
+  if (deepStatus === 'low') {
+    return {
+      label,
+      title: 'REM-heavy',
+      text: 'REM was solid, but deep sleep — physical recovery — ran short tonight.',
+    }
+  }
+  if (remStatus === 'low') {
+    return {
+      label,
+      title: 'Deep-heavy',
+      text: 'Deep sleep was solid, but REM — mental recovery and memory — ran short tonight.',
+    }
+  }
+  if (deepStatus === 'high' || remStatus === 'high') {
+    return {
+      label,
+      title: 'Unusual mix',
+      text: `${deepStatus === 'high' ? 'Deep' : 'REM'} sleep ran higher than typical tonight — worth watching if it continues.`,
+    }
+  }
+  return {
+    label,
+    title: 'Restorative',
+    text: 'Great mix of deep and REM. Your body and mind got the recovery they needed.',
+  }
 }
 
 /**
@@ -364,7 +514,6 @@ export function formatDuration(minutes: number): string {
 
 /** Stat-tile time: 78 -> "1:18", 14 -> "14" (caller shows the "m" unit). */
 export function formatSleepStat(minutes: number): string {
-  if (minutes < 60) return String(minutes)
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return `${h}:${String(m).padStart(2, '0')}`
@@ -400,6 +549,33 @@ export interface DayRecord {
 /** Editable store: day-of-month -> record, for a single month. */
 export type JournalMonth = Record<number, DayRecord>
 
+// Journal v2: multiple timed entries per day, an icon from the shared registry,
+// and a per-entry importance flag. Legacy types above are kept as migration input.
+
+export interface DayEntryV2 {
+  id: string
+  text: string
+  /** "HH:MM" 24-hour (start time). */
+  time: string
+  /** Optional "HH:MM" end time for events with a duration. */
+  endTime?: string
+  tag: string
+  /** 'event' (timed, default) or 'task' (checkable). Absent = event. */
+  kind?: 'event' | 'task'
+  /** Completion state for tasks. */
+  done?: boolean
+  important?: boolean
+}
+
+export interface DayRecordV2 {
+  /** Icon id from src/icons.ts; legacy activities are valid ids. */
+  icon?: IconId
+  entries: DayEntryV2[]
+}
+
+/** V2 store: day-of-month -> record, persisted under atlas.journal.v2.*. */
+export type JournalMonthV2 = Record<number, DayRecordV2>
+
 export interface GridCell {
   day: number
   /** True only for days belonging to the displayed month (editable). */
@@ -418,6 +594,22 @@ export interface MonthGrid {
 export const ENTRY_TAGS = ['FOCUS', 'BODY', 'MIND', 'RECOVERY']
 
 /**
+ * Per-tag shade, drawn from the existing monochrome accent ramp (no new hues) so
+ * entries/categories read as distinct without breaking the mono design system.
+ */
+const ENTRY_TAG_COLORS: Record<string, string> = {
+  FOCUS: 'var(--color-accent)',
+  BODY: 'var(--color-sky)',
+  MIND: 'var(--color-cyan)',
+  RECOVERY: 'var(--color-royal)',
+}
+
+/** Shade for a tag; falls back to the accent shade for any unrecognized tag. */
+export function tagColor(tag: string): string {
+  return ENTRY_TAG_COLORS[tag] ?? 'var(--color-accent)'
+}
+
+/**
  * Builds a Monday-first calendar grid for the month containing `date`, padded
  * with the trailing days of the previous month and leading days of the next so
  * every week is a full row of 7. `inMonth` marks the real month's days; today
@@ -426,7 +618,12 @@ export const ENTRY_TAGS = ['FOCUS', 'BODY', 'MIND', 'RECOVERY']
 export function buildMonthGrid(date = new Date()): MonthGrid {
   const year = date.getFullYear()
   const monthIndex = date.getMonth()
-  const today = date.getDate()
+
+  // "Today" only applies when the displayed month is the real current month —
+  // otherwise navigating to another month would falsely flag a day.
+  const now = new Date()
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === monthIndex
+  const today = now.getDate()
 
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
   const daysInPrev = new Date(year, monthIndex, 0).getDate()
@@ -438,7 +635,7 @@ export function buildMonthGrid(date = new Date()): MonthGrid {
     cells.push({ day: daysInPrev - lead + 1 + i, inMonth: false, isToday: false })
   }
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ day: d, inMonth: true, isToday: d === today })
+    cells.push({ day: d, inMonth: true, isToday: isCurrentMonth && d === today })
   }
   let next = 1
   while (cells.length % 7 !== 0) {
@@ -466,31 +663,10 @@ export function formatEntryDate(year: number, monthIndex: number, day: number): 
 }
 
 /**
- * Seed data for the current month — a plausible spread of activities plus a few
- * journal entries. Persisted to localStorage on first load, then user-editable.
+ * Journal seed — intentionally empty so the calendar starts blank and the user
+ * fills in their own events, tasks, and journal entries.
  */
-export const journalSeed: JournalMonth = {
-  2: { activity: 'strength' },
-  3: { activity: 'run' },
-  4: { activity: 'swim' },
-  6: { activity: 'rest' },
-  8: { activity: 'strength', entry: { text: 'Heavy squats felt strong — bumped the top set.', time: '18:30', tag: 'BODY' } },
-  9: { activity: 'sleep' },
-  10: { activity: 'run', entry: { text: 'Easy morning run by the river. Legs fresh.', time: '07:15', tag: 'FOCUS' } },
-  11: { activity: 'run' },
-  13: { activity: 'swim' },
-  14: { activity: 'rest' },
-  15: { activity: 'strength' },
-  16: { activity: 'strength' },
-  17: { activity: 'run' },
-  19: { activity: 'swim', entry: { text: 'Long swim — smooth and unhurried.', time: '12:40', tag: 'RECOVERY' } },
-  22: { activity: 'journal', entry: { text: 'Reflected on the quarter. Direction feels clear.', time: '22:05', tag: 'MIND' } },
-  24: { activity: 'strength' },
-  25: { activity: 'run' },
-  26: { activity: 'run', entry: { text: 'Tempo run, negative split. Pleased with the legs.', time: '06:50', tag: 'BODY' } },
-  27: { entry: { text: 'Shipped the readiness engine. Felt sharp all day — the early run helped.', time: '21:10', tag: 'FOCUS' } },
-  28: { activity: 'rest' },
-}
+export const journalSeed: JournalMonth = {}
 
 // --- Nutrition screen --------------------------------------------------------
 
@@ -522,8 +698,21 @@ export interface Meal {
   name: string
   /** Calories; omitted for raw text-only entries (shown as "—"). */
   kcal?: number
+  /** Protein in grams (from AI estimate); omitted when unknown. */
+  protein?: number
+  /** Carbohydrates in grams (from AI estimate); omitted when unknown. */
+  carbs?: number
+  /** Fat in grams (from AI estimate); omitted when unknown. */
+  fat?: number
+  /** Micronutrients (from AI estimate), in each key's unit; omitted when unknown. */
+  micros?: MicroAmounts
+  /** Day the meal belongs to, YYYY-MM-DD. Absent on legacy seed entries. */
+  date?: string
+  /** ISO timestamp the entry was logged. Absent on legacy seed entries. */
+  createdAt?: string
 }
 
+/** Seed meals for the display-only fallback; live logging uses useMeals(). */
 export const meals: Meal[] = [
   { id: 'm1', type: 'breakfast', name: 'Eggs, oatmeal, blueberries', kcal: 520 },
   { id: 'm2', type: 'lunch', name: 'Chicken & rice bowl', kcal: 740 },
