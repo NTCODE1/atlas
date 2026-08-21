@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useSettings } from '../settingsContext'
 import { useNutritionTargets, useGoalHistory } from '../nutritionTargets'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useWeightLog } from '../hooks/useWeightLog'
 import { todayISO } from '../workouts'
-import type { WeightEntry } from '../weightLog'
 import type { ActivityLevel, GoalType, Sex } from '../settings'
 import { DEFAULT_MACRO_SPLIT, estimateCalorieGoal, macroGramsFromSplit } from '../onboardingCalc'
 import UnitsStep, { type UnitSystem } from './steps/UnitsStep'
@@ -34,7 +33,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const { setSettings } = useSettings()
   const { setTargets } = useNutritionTargets()
   const [, setGoalHistory] = useGoalHistory()
-  const [weightEntries, setWeightEntries] = useLocalStorage<WeightEntry[]>('atlas.weight.entries', [])
+  const [weightEntries, setWeightEntries] = useWeightLog()
 
   const [stepIndex, setStepIndex] = useState(0)
   const step = STEPS[stepIndex]

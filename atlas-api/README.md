@@ -97,9 +97,14 @@ Two stores, split by what they hold:
 - **Cloudflare D1** (`DB` binding, see `migrations/0001_init.sql`) — everything
   else: `health`/`workout` ingest (verbatim JSON blobs, same semantics as
   before, just moved off KV) and every synced domain (real typed columns per
-  domain — meals, hydration, supplements, nutrition targets, goal history,
-  journal, and, as they're brought online in the same pattern, the rest of
-  what the PWA tracks).
+  domain). **Live:** meals, hydration, supplements, nutrition targets, goal
+  history, journal (calendar + today's focus), weight log, caffeine doses,
+  fasting state, habit definitions + check-ins, deep work, and settings
+  (+ avatar). **Schema only, not yet wired to a hook** (see
+  `migrations/0001_init.sql` for the full table list): Training (exercises/
+  sessions/sets/VO2max), Finance, Motivation (+ goals), and the daily
+  snapshot rollup — bringing one online is the same mechanical pattern
+  described below.
 
 **Sync model** (`src/sync.ts`, `src/sync/*.ts`): each synced domain corresponds
 to one browser localStorage key on the frontend (`src/hooks/useSyncedStorage.ts`
@@ -239,14 +244,14 @@ automatically unless `ANTHROPIC_API_KEY` is set (env var or `.dev.vars`).
 real-world values for both layers — it costs real Anthropic API calls, so
 it isn't run as part of `npm test`.
 
-`src/sync.test.ts` and `src/sync/journalSync.test.ts` check the D1 sync layer
-(last-write-wins, the meals/hydration retention-window scoping, per-month
-journal date reconstruction and isolation, round-trip field fidelity) against
-a **real local D1 binding** — no mocking — via `wrangler`'s
-`getPlatformProxy()`, reusing the same local Miniflare SQLite state
-`wrangler d1 migrations apply atlas-db --local` sets up (free, no network, so
-these run as part of the default `npm test` unlike the Anthropic-backed
-tests). `npm test` passes `--test-concurrency=1`: these two files share that
-one local D1 file, and Node's test runner running them in separate
-concurrent processes by default caused real file-lock races — sequencing
-fixed it.
+`src/sync.test.ts`, `src/sync/journalSync.test.ts`, and `src/sync/phase2.test.ts`
+check the D1 sync layer (last-write-wins, the retention-window scoping for
+meals/hydration/caffeine, per-month journal date reconstruction and
+isolation, round-trip field fidelity for every live domain) against a **real
+local D1 binding** — no mocking — via `wrangler`'s `getPlatformProxy()`,
+reusing the same local Miniflare SQLite state `wrangler d1 migrations apply
+atlas-db --local` sets up (free, no network, so these run as part of the
+default `npm test` unlike the Anthropic-backed tests). `npm test` passes
+`--test-concurrency=1`: these files share that one local D1 file, and Node's
+test runner running them in separate concurrent processes by default caused
+real file-lock races — sequencing fixed it.

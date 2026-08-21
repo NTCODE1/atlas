@@ -55,9 +55,22 @@ import { buildNutritionPrompt, applyFinnishFoodOverrides } from "./finnishFoods.
 import { handleFlatSyncRoute } from "./sync.ts";
 import { handleJournalSyncRoute, JOURNAL_SYNC_REGISTRY } from "./sync/journalSync.ts";
 import { NUTRITION_SYNC_REGISTRY } from "./sync/nutritionSync.ts";
+import { WEIGHT_SYNC_REGISTRY } from "./sync/weightSync.ts";
+import { ENERGY_SYNC_REGISTRY } from "./sync/energySync.ts";
+import { HABITS_SYNC_REGISTRY } from "./sync/habitsSync.ts";
+import { DEEP_WORK_SYNC_REGISTRY } from "./sync/deepWorkSync.ts";
+import { SETTINGS_SYNC_REGISTRY } from "./sync/settingsSync.ts";
 
 /** Every flat-keyed (`/api/sync/:domain`) registration, merged from each feature area's own file. */
-const SYNC_REGISTRY = { ...NUTRITION_SYNC_REGISTRY, ...JOURNAL_SYNC_REGISTRY };
+const SYNC_REGISTRY = {
+  ...NUTRITION_SYNC_REGISTRY,
+  ...JOURNAL_SYNC_REGISTRY,
+  ...WEIGHT_SYNC_REGISTRY,
+  ...ENERGY_SYNC_REGISTRY,
+  ...HABITS_SYNC_REGISTRY,
+  ...DEEP_WORK_SYNC_REGISTRY,
+  ...SETTINGS_SYNC_REGISTRY,
+};
 
 export interface Env {
   HEALTH_KV: KVNamespace;

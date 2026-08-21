@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check, History, Plus } from 'lucide-react'
-import { useLocalStorage } from '../../hooks/useLocalStorage'
+import { useSyncedStorage } from '../../hooks/useSyncedStorage'
 import {
   dateISO,
   HABIT_PRESETS,
@@ -14,11 +14,13 @@ import HabitHistorySheet from './HabitHistorySheet'
 
 /**
  * Daily habit check-ins. A check = "kept the goal today" (for avoid-habits:
- * stayed clean). Owns both habit localStorage keys — single consumer.
+ * stayed clean). Owns both habit localStorage keys — single consumer. Synced
+ * through the Worker (see hooks/useSyncedStorage.ts / atlas-api/src/sync/
+ * habitsSync.ts's "habitDefs"/"habitChecks" domains).
  */
 export default function HabitTracker() {
-  const [habits, setHabits] = useLocalStorage<HabitDef[]>('atlas.habits.defs', HABIT_PRESETS)
-  const [checks, setChecks] = useLocalStorage<HabitChecks>('atlas.habits.checks', {})
+  const [habits, setHabits] = useSyncedStorage<HabitDef[]>('atlas.habits.defs', HABIT_PRESETS, 'habitDefs')
+  const [checks, setChecks] = useSyncedStorage<HabitChecks>('atlas.habits.checks', {}, 'habitChecks')
   const [editorOpen, setEditorOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
 

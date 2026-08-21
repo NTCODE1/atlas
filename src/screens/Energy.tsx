@@ -10,6 +10,7 @@ import {
 import { activity, formatToday, hydration } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useSyncedStorage } from '../hooks/useSyncedStorage'
 import { useHealth } from '../api/healthContext'
 import { useReadiness } from '../hooks/useReadiness'
 import { DEFAULT_FASTING, elapsedHours, type FastingState } from '../fasting'
@@ -27,9 +28,15 @@ function currentHour(): number {
 export default function Energy() {
   const { health } = useHealth()
   // Persisted so logged caffeine survives navigation and drives the forecast.
-  const [doses, setDoses] = useLocalStorage<CaffeineDose[]>(
+  // Synced through the Worker (see hooks/useSyncedStorage.ts /
+  // atlas-api/src/sync/energySync.ts's "caffeineDoses" domain) — this is the
+  // one write-owning call site; every other read of this key elsewhere stays
+  // a plain useLocalStorage (read-only, picks up the synced value for free
+  // via the existing cross-component broadcast).
+  const [doses, setDoses] = useSyncedStorage<CaffeineDose[]>(
     'atlas.caffeine.doses',
     initialCaffeineDoses,
+    'caffeineDoses',
   )
   // Read-only here: fasting is owned by the Nutrition FastingCard.
   const [fasting] = useLocalStorage<FastingState>('atlas.fasting', DEFAULT_FASTING)

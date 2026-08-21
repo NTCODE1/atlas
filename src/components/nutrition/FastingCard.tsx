@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Timer } from 'lucide-react'
-import { useLocalStorage } from '../../hooks/useLocalStorage'
+import { useSyncedStorage } from '../../hooks/useSyncedStorage'
 import {
   clockFromMs,
   DEFAULT_FASTING,
@@ -22,9 +22,14 @@ const STROKE = 10
 const RADIUS = (SIZE - STROKE) / 2
 const CIRC = 2 * Math.PI * RADIUS
 
-/** Intermittent-fasting timer: start/stop, live elapsed, editable target. */
+/**
+ * Intermittent-fasting timer: start/stop, live elapsed, editable target.
+ * Synced through the Worker (see hooks/useSyncedStorage.ts /
+ * atlas-api/src/sync/energySync.ts's "fastingState" domain) — this is the
+ * write-owning call site; Energy.tsx's own read of this key stays read-only.
+ */
 export default function FastingCard() {
-  const [state, setState] = useLocalStorage<FastingState>('atlas.fasting', DEFAULT_FASTING)
+  const [state, setState] = useSyncedStorage<FastingState>('atlas.fasting', DEFAULT_FASTING, 'fastingState')
   const [now, setNow] = useState(Date.now())
 
   // Tick while a fast is running so the elapsed time and ring advance.

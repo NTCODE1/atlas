@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { useLocalStorage } from './hooks/useLocalStorage'
+import { useSyncedStorage } from './hooks/useSyncedStorage'
 import { DEFAULT_SETTINGS, type Settings } from './settings'
 
 /** PWA browser-chrome color per theme (matches --color-bg). */
@@ -18,10 +18,13 @@ const SettingsContext = createContext<SettingsContextValue | null>(null)
 /**
  * Single owner of the persisted settings + avatar. useLocalStorage instances
  * don't sync across components, so everything reads through this context.
+ * Synced through the Worker (see hooks/useSyncedStorage.ts /
+ * atlas-api/src/sync/settingsSync.ts's "settings"/"settingsAvatar" domains)
+ * so a preference changed on one device follows to another.
  */
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [stored, setSettings] = useLocalStorage<Settings>('atlas.settings', DEFAULT_SETTINGS)
-  const [avatar, setAvatar] = useLocalStorage<string | null>('atlas.settings.avatar', null)
+  const [stored, setSettings] = useSyncedStorage<Settings>('atlas.settings', DEFAULT_SETTINGS, 'settings')
+  const [avatar, setAvatar] = useSyncedStorage<string | null>('atlas.settings.avatar', null, 'settingsAvatar')
 
   // Merge over defaults so settings saved by older app versions gain new fields.
   const settings = { ...DEFAULT_SETTINGS, ...stored }

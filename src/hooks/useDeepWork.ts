@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { todayISO } from '../workouts'
 import { activeMinutes, totalMinutesFor, DEFAULT_DEEP_WORK, type DeepWorkState } from '../deepWork'
 
@@ -9,10 +9,12 @@ const prefersReducedMotion = () =>
 /**
  * Tap-to-toggle deep-work timer, mirroring useFasting's tick pattern. Sessions
  * accumulate per day rather than tracking one continuous window, since deep
- * work happens in bursts (a session, a break, another session).
+ * work happens in bursts (a session, a break, another session). Synced
+ * through the Worker (see useSyncedStorage.ts / atlas-api/src/sync/
+ * deepWorkSync.ts's "deepWork" domain).
  */
 export function useDeepWork() {
-  const [state, setState] = useLocalStorage<DeepWorkState>('atlas.deepwork', DEFAULT_DEEP_WORK)
+  const [state, setState] = useSyncedStorage<DeepWorkState>('atlas.deepwork', DEFAULT_DEEP_WORK, 'deepWork')
   const [now, setNow] = useState(Date.now())
 
   // Tick while a session is running so the elapsed time and progress advance.

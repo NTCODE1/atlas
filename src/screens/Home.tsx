@@ -13,8 +13,9 @@ import WaterCard from '../components/WaterCard'
 import BriefingCard from '../components/home/BriefingCard'
 import WeightSheet from '../components/home/WeightSheet'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useWeightLog } from '../hooks/useWeightLog'
 import { kgToDisplay } from '../settings'
-import { latestEntry, type WeightEntry } from '../weightLog'
+import { latestEntry } from '../weightLog'
 import { snapshotList, cutoffDateISO, type SnapshotStore, type DailySnapshot } from '../dailySnapshot'
 import { todayISO } from '../workouts'
 import type { CaffeineDose } from '../caffeine'
@@ -33,10 +34,7 @@ function pctTrend(
 export default function Home() {
   const { health, loading } = useHealth()
   const { settings } = useSettings()
-  const [weightEntries, setWeightEntries] = useLocalStorage<WeightEntry[]>(
-    'atlas.weight.entries',
-    [],
-  )
+  const [weightEntries, setWeightEntries] = useWeightLog()
   const [snapshots] = useLocalStorage<SnapshotStore>('atlas.snapshots', {})
   // Read-only here: doses are owned by the Energy screen. health.caffeineMg is
   // a different, unused Apple Health metric — this is what's actually logged.

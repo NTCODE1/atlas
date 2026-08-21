@@ -6,7 +6,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "test": "node --test --test-concurrency=1 src/finnishFoods.test.ts src/fineliMatch.test.ts src/sync.test.ts src/sync/journalSync.test.ts",
+    "test": "node --test --test-concurrency=1 src/finnishFoods.test.ts src/fineliMatch.test.ts src/sync.test.ts src/sync/journalSync.test.ts src/sync/phase2.test.ts",
     "test:accuracy": "node --test src/nutritionAccuracy.test.ts",
     "test:all": "node --test --test-concurrency=1"
   },
