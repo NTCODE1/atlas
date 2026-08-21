@@ -23,3 +23,14 @@ AI_DAILY_CAP = "100"
 [[kv_namespaces]]
 binding = "HEALTH_KV"
 id = "c97ba23b2ebd4775a73743b9e8654dc8"
+
+# Structured storage for everything that used to live only in browser localStorage
+# (nutrition, journal, and — over time — the rest of the domains in migrations/
+# 0001_init.sql) plus health/workout ingest. See src/sync.ts. Created with
+# `npx wrangler d1 create atlas-db`; migrations applied with
+# `npx wrangler d1 migrations apply atlas-db` (add `--local` for local dev).
+[[d1_databases]]
+binding = "DB"
+database_name = "atlas-db"
+database_id = "74ac927c-d0ab-469b-9dbe-8bd62672b63f"
+migrations_dir = "migrations"

@@ -203,6 +203,33 @@ const CASES: FoodCase[] = [
     expected: { kcal: 144, protein: 5.6, carbs: 25.6, fat: 0.1, iron: 1.23, calcium: 19, vitaminC: 0.6, potassium: 251 },
   },
 
+  // --- Generic staples (Fineli fallback, no manual FINNISH_FOOD_REFERENCE entry) ---
+  // These exercise fineliMatch.ts directly rather than the hand-curated table:
+  // deterministic once an explicit gram amount is given, sourced from the
+  // generated Fineli data (fineliFoods.generated.ts) via a fineliAliases.ts
+  // default (banana) or a globally-unique Fineli head (rice/chicken breast
+  // both resolve through fineliAliases.ts too — "Riisi"/"Broileri, rintafilee"
+  // both have many same-head variants). Expected values are the exact
+  // per-100g × grams arithmetic, so — like the branded-product cases above —
+  // `actual` and `expected` should match closely, not just fall in a wide
+  // tolerance band.
+  {
+    label: "150g banaania (banana, explicit weight)",
+    query: "150g banaania",
+    // fineliFoods.generated.ts id 11049 "Banaani, kuorittu" (peeled), via the
+    // fineliAliases.ts default for bare "banaani": 87.576 kcal/100g.
+    expected: { kcal: 131, protein: 1.8, carbs: 27.45, fat: 0.6, iron: 1.5, calcium: 9.3, vitaminC: 15, potassium: 537.6 },
+  },
+  {
+    label: "200g kananrintaa ja 150g riisiä (chicken breast + rice, explicit weights)",
+    query: "200g kananrintaa ja 150g riisiä",
+    // id 7530 "Broileri, rintafilee, paistettu, nahaton" (via the
+    // fineliAliases.ts "kananrinta" bridge) + id 1370 "Riisi, keitetty,
+    // suolaton" (via the "riisi" default) — both deterministic once given an
+    // explicit gram amount.
+    expected: { kcal: 539, protein: 56.57, carbs: 45.38, fat: 13.89, iron: 1.81, calcium: 25.68, vitaminC: 0, potassium: 976.26 },
+  },
+
   // --- Meal combinations ---
   {
     label: "100g riisi (cooked), 50g kana (chicken breast), 50g parsakaali (broccoli)",

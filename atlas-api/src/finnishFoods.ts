@@ -25,8 +25,17 @@
  *      330 kcal/100g). applyFinnishFoodOverrides then forces these exact
  *      numbers into the model's response after the call, regardless of what
  *      it actually returned — so known items are exact, not merely
- *      well-prompted. The model still owns anything the table doesn't cover
- *      (other foods in the same meal) and all micronutrient estimates.
+ *      well-prompted.
+ *
+ * This table is deliberately small and hand-picked — for everything it
+ * doesn't cover, buildNutritionPrompt/applyFinnishFoodOverrides fall back to
+ * fineliMatch.ts, the same two-step "prompt + force-override" idea applied
+ * automatically against ~4,050 generic and Finnish foods from Fineli's open
+ * data (fineliFoods.generated.ts). This table still wins when both would
+ * match the same word (see maskKnownAliases) — it exists for foods the
+ * Fineli layer, by its own more conservative rules, won't confidently
+ * resolve on its own (exact branded portion sizes, common Finnish products
+ * whose real serving size differs sharply from a naive guess).
  */
 
 export interface FinnishFoodRef {
@@ -338,8 +347,76 @@ export const FINNISH_FOOD_REFERENCE: FinnishFoodRef[] = [
   },
 ]
 
+import { resolveQuantity as resolveQuantityShared, QUANTITY_WORDS, type ResolvedQuantity } from './foodQuantity.ts'
+import { matchFineliFoods, fineliItemLabel, type FineliMatchedItem, type FoodMicroKey } from './fineliMatch.ts'
+
 /** Lowercase for matching (Finnish ä/ö/å fold correctly under plain JS lowercasing). */
 const norm = (s: string) => s.toLowerCase()
+
+/** Display unit for each food-sourced micro, for the "these items already contribute..." prompt sentence — mirrors micros.ts's MICRO_META units (mg/µg/g), duplicated locally since atlas-api and the frontend are separate packages. */
+const MICRO_UNIT: Record<FoodMicroKey, string> = {
+  iron: 'mg',
+  calcium: 'mg',
+  vitaminD: 'µg',
+  vitaminB12: 'µg',
+  zinc: 'mg',
+  magnesium: 'mg',
+  potassium: 'mg',
+  fibre: 'g',
+  omega3: 'g',
+  vitaminC: 'mg',
+  folate: 'µg',
+}
+const FOOD_MICRO_KEYS = Object.keys(MICRO_UNIT) as FoodMicroKey[]
+
+/** "iron 2.2mg, calcium 34mg, ..." for whichever keys are present — used both in the prompt and (rounded) as the forced micros output. */
+function describeMicros(micros: Partial<Record<FoodMicroKey, number>>): string {
+  return FOOD_MICRO_KEYS.filter((k) => micros[k] != null)
+    .map((k) => `${k} ${micros[k]}${MICRO_UNIT[k]}`)
+    .join(', ')
+}
+
+/** Sums the manual table's 4 tracked micros (iron/calcium/vitaminC/potassium) plus the Fineli layer's up-to-11, into one combined per-meal total. */
+function combineMicroTotals(
+  known: FinnishFoodItem[],
+  fineliItems: FineliMatchedItem[],
+): Partial<Record<FoodMicroKey, number>> {
+  const total: Partial<Record<FoodMicroKey, number>> = {}
+  const add = (key: FoodMicroKey, amount: number) => {
+    total[key] = round2((total[key] ?? 0) + amount)
+  }
+  for (const it of known) {
+    add('iron', it.iron)
+    add('calcium', it.calcium)
+    add('vitaminC', it.vitaminC)
+    add('potassium', it.potassium)
+  }
+  for (const it of fineliItems) {
+    for (const key of FOOD_MICRO_KEYS) {
+      const amount = it.micros[key]
+      if (amount != null) add(key, amount)
+    }
+  }
+  return total
+}
+
+/**
+ * Blanks out every alias of each already-recognized manual-table item from
+ * `t` (length-preserving, so any other item's quantity phrase elsewhere in
+ * the text keeps its original character offsets) — run before handing text
+ * to the Fineli matcher so it doesn't re-match words the manual table
+ * already claimed (e.g. "maito" is a manual-table alias; without masking,
+ * the Fineli layer would also try to match the same word).
+ */
+function maskKnownAliases(t: string, known: FinnishFoodItem[]): string {
+  let out = t
+  for (const it of known) {
+    for (const alias of it.ref.aliases) {
+      out = out.split(alias).join(' '.repeat(alias.length))
+    }
+  }
+  return out
+}
 
 /**
  * Reference entries whose alias appears in `text`, longest-alias-first so a
@@ -376,112 +453,13 @@ export function finnishFoodReferenceBlock(text: string): string {
   )
 }
 
-/** 1-10 in English and Finnish, for quantities written as words rather than digits. */
-const QUANTITY_WORDS: Record<string, number> = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-  yksi: 1,
-  kaksi: 2,
-  kolme: 3,
-  neljä: 4,
-  viisi: 5,
-  kuusi: 6,
-  seitsemän: 7,
-  kahdeksan: 8,
-  yhdeksän: 9,
-  kymmenen: 10,
-}
-
 /**
- * Serving-unit words that may sit between a quantity and the food name
- * ("2 slices X", "4 viipale Y"). `\w*` suffixes on the Finnish stems (rather
- * than enumerating "viipale"/"viipaletta"/"viipaleen"/… one by one) so any
- * case-inflected form matches — the earlier bug here was matching only
- * "viipaletta" and missing the far more common bare "viipale", which
- * silently defaulted affected items' quantity to 1.
- */
-const UNIT_WORD = '(?:slices?|pieces?|pcs?|viipale\\w*|pala\\w*|kpl|kappale\\w*|pkt|purkki\\w*|paketti\\w*)'
-
-/** Quantity immediately preceding position `index` in normalized text `t`; defaults to 1 if none found. */
-function quantityBefore(t: string, index: number): number {
-  const before = t.slice(Math.max(0, index - 40), index)
-  const digitMatch = new RegExp(`(\\d+)\\s*${UNIT_WORD}?\\s*$`, 'i').exec(before)
-  if (digitMatch) return parseInt(digitMatch[1], 10)
-  const numberWords = Object.keys(QUANTITY_WORDS).join('|')
-  const wordMatch = new RegExp(`\\b(${numberWords})\\s*${UNIT_WORD}?\\s*$`, 'i').exec(before)
-  if (wordMatch) return QUANTITY_WORDS[wordMatch[1].toLowerCase()] ?? 1
-  return 1
-}
-
-/**
- * A trailing "N kpl"/"N kappaletta" — Finnish for "N pieces" — is the
- * definitive per-unit count and overrides any vaguer package quantifier
- * before the food name (e.g. "1 pkt Atria nakit, 4 kpl" is 4 sausages, not
- * 1). Bounded to a short lookahead so it can't bleed into a later, unrelated
- * item's own "N kpl" in a longer list.
- */
-function trailingKplCount(t: string, from: number): number | null {
-  const after = t.slice(from, from + 24)
-  const match = /^[^\d]{0,16}?(\d+)\s*(?:kpl|kappaletta?)\b/i.exec(after)
-  return match ? parseInt(match[1], 10) : null
-}
-
-/** An explicit "N g"/"N grammaa" weight immediately before the food name, e.g. "200g raejuusto". */
-function gramQuantityBefore(t: string, index: number): number | null {
-  const before = t.slice(Math.max(0, index - 40), index)
-  const match = /(\d+(?:[.,]\d+)?)\s*(?:g|grammaa?)\s*$/i.exec(before)
-  return match ? parseFloat(match[1].replace(',', '.')) : null
-}
-
-/**
- * Grams per 1 dl (100ml) — the standard practical approximation used for
- * both liquids and porridge-like foods (≈ water density; the difference for
- * milk/porridge is negligible at this precision).
- */
-const G_PER_DL = 100
-
-/** An explicit "N dl"/"N desilitraa" volume immediately before the food name, e.g. "1 dl kaurapuuro". */
-function dlQuantityBefore(t: string, index: number): number | null {
-  const before = t.slice(Math.max(0, index - 40), index)
-  const match = /(\d+(?:[.,]\d+)?)\s*(?:dl|desilitraa?|desiä?)\s*$/i.exec(before)
-  return match ? parseFloat(match[1].replace(',', '.')) : null
-}
-
-interface ResolvedQuantity {
-  grams: number
-  /** Human-readable quantity for the item label, e.g. "4 kpl", "200 g", "1 dl", "2 slice". */
-  label: string
-}
-
-/**
- * Resolves how much of `ref` is actually meant, trying the most explicit /
- * unambiguous signal in the text first:
- *   1. a trailing "N kpl" piece-count (wins over a leading package word)
- *   2. an explicit gram weight ("200g raejuusto")
- *   3. an explicit volume in dl ("1 dl kaurapuuro" → 100g, not a full "bowl")
- *   4. a discrete unit count immediately before the name ("4 viipale X")
- *   5. default: exactly one of ref.unitG
+ * Resolves how much of `ref` is actually meant — delegates to the shared
+ * resolveQuantity (see foodQuantity.ts) with this table's own typical
+ * single-serving weight (`ref.unitG`/`ref.unitLabel`) as the default.
  */
 function resolveQuantity(t: string, index: number, aliasLen: number, ref: FinnishFoodRef): ResolvedQuantity {
-  const kpl = trailingKplCount(t, index + aliasLen)
-  if (kpl !== null) return { grams: ref.unitG * kpl, label: `${kpl} kpl` }
-
-  const grams = gramQuantityBefore(t, index)
-  if (grams !== null) return { grams, label: `${grams} g` }
-
-  const dl = dlQuantityBefore(t, index)
-  if (dl !== null) return { grams: dl * G_PER_DL, label: `${dl} dl` }
-
-  const count = quantityBefore(t, index)
-  return { grams: ref.unitG * count, label: `${count} ${ref.unitLabel}` }
+  return resolveQuantityShared(t, index, aliasLen, ref.unitG, ref.unitLabel)
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10
@@ -572,19 +550,27 @@ const DESCRIPTOR_STOPWORDS = new Set([
 ])
 
 /**
- * True if `text` mentions any food beyond what's already in `known` — i.e.
- * whether there's something the model legitimately still needs to estimate.
- * Works by stripping every known item's matched alias, all digits/quantity
- * words/percentages, and descriptor stopwords, then checking whether any
- * words remain. Used as a safety backstop in applyFinnishFoodOverrides: when
- * nothing is left, ANY item in the model's response that isn't one of our
- * exact known items can only be a stray duplicate/mis-description of one we
- * already have — not genuinely different food — so it's safe to drop.
+ * True if `text` mentions any food beyond what's already in `known` and
+ * `fineliItems` — i.e. whether there's something the model legitimately
+ * still needs to estimate. Works by stripping every known item's matched
+ * alias (and, for the Fineli layer, its exact matched text), all
+ * digits/quantity words/percentages, and descriptor stopwords, then checking
+ * whether any words remain. Used as a safety backstop in
+ * applyFinnishFoodOverrides: when nothing is left, ANY item in the model's
+ * response that isn't one of our exact known items can only be a stray
+ * duplicate/mis-description of one we already have — not genuinely
+ * different food — so it's safe to drop. Fineli's reference-only matches
+ * (unambiguous identity, no stated amount) are deliberately NOT stripped
+ * here — we don't know how much of them was eaten, so that food is still
+ * "unaccounted for" for the purposes of forcing a total.
  */
-function hasLeftoverFood(text: string, known: FinnishFoodItem[]): boolean {
+function hasLeftoverFood(text: string, known: FinnishFoodItem[], fineliItems: FineliMatchedItem[]): boolean {
   let t = norm(text)
   for (const it of known) {
     for (const alias of it.ref.aliases) t = t.split(alias).join(' ')
+  }
+  for (const it of fineliItems) {
+    t = t.split(it.matchedText).join(' ')
   }
   const words = t
     .replace(/[.,!?;:()]/g, ' ')
@@ -605,7 +591,9 @@ function hasLeftoverFood(text: string, known: FinnishFoodItem[]): boolean {
 /**
  * Builds the full /api/ai/nutrition prompt for `text`, including a
  * deterministic-items block (exact numbers, already multiplied by the
- * parsed quantity) for any recognized Finnish foods. Exported (rather than
+ * parsed quantity) for any recognized Finnish foods — from the hand-curated
+ * FINNISH_FOOD_REFERENCE table first, then (for anything it doesn't cover)
+ * the generated Fineli data via fineliMatch.ts. Exported (rather than
  * inlined in the route handler) so finnishFoods.test.ts exercises the exact
  * prompt the server sends, not a re-implementation of it. `microUnits` is
  * passed in rather than imported to avoid a circular import with index.ts,
@@ -613,36 +601,49 @@ function hasLeftoverFood(text: string, known: FinnishFoodItem[]): boolean {
  */
 export function buildNutritionPrompt(text: string, microUnits: string): string {
   const known = extractFinnishFoodItems(text)
-  const knownMicros = known.reduce(
-    (acc, it) => ({
-      iron: acc.iron + it.iron,
-      calcium: acc.calcium + it.calcium,
-      vitaminC: acc.vitaminC + it.vitaminC,
-      potassium: acc.potassium + it.potassium,
-    }),
-    { iron: 0, calcium: 0, vitaminC: 0, potassium: 0 },
-  )
+  const fineli = matchFineliFoods(maskKnownAliases(norm(text), known))
+  const combinedMicros = combineMicroTotals(known, fineli.items)
+
+  const knownLines = [
+    ...known.map(
+      (it) =>
+        `- name: "${finnishItemLabel(it)}" — kcal: ${it.kcal}, protein: ${it.protein}, ` +
+        `carbs: ${it.carbs}, fat: ${it.fat} (iron ${it.iron}mg, calcium ${it.calcium}mg, ` +
+        `vitaminC ${it.vitaminC}mg, potassium ${it.potassium}mg)`,
+    ),
+    ...fineli.items.map(
+      (it) =>
+        `- name: "${fineliItemLabel(it)}" — kcal: ${it.kcal}, protein: ${it.protein}, ` +
+        `carbs: ${it.carbs}, fat: ${it.fat}` +
+        (Object.keys(it.micros).length > 0 ? ` (${describeMicros(it.micros)})` : ''),
+    ),
+  ]
+
   const knownBlock =
-    known.length > 0
+    knownLines.length > 0
       ? '\n\nThese items are already computed exactly — for each, add ONE entry to your items[] ' +
         'array with `name` set to EXACTLY the label given (character-for-character, unchanged) ' +
         'and kcal/protein/carbs/fat set to EXACTLY the numbers given (do not recompute, round ' +
         'differently, or adjust them):\n' +
-        known
-          .map(
-            (it) =>
-              `- name: "${finnishItemLabel(it)}" — kcal: ${it.kcal}, protein: ${it.protein}, ` +
-              `carbs: ${it.carbs}, fat: ${it.fat} (iron ${it.iron}mg, calcium ${it.calcium}mg, ` +
-              `vitaminC ${it.vitaminC}mg, potassium ${it.potassium}mg)`,
-          )
-          .join('\n') +
+        knownLines.join('\n') +
         '\nAdd separate items[] entries only for any OTHER food in the meal description not ' +
         'listed above, with your own best estimate for those. Set totalKcal/protein/carbs/fat ' +
         'to the sum of every item in items[] (the ones given above plus anything else you add). ' +
-        `These items alone already contribute iron ${round1(knownMicros.iron)}mg, calcium ` +
-        `${Math.round(knownMicros.calcium)}mg, vitaminC ${round1(knownMicros.vitaminC)}mg, ` +
-        `potassium ${Math.round(knownMicros.potassium)}mg — your total micronutrient estimate ` +
-        'must be at least this much, plus whatever any other food in the meal adds.'
+        `These items alone already contribute ${describeMicros(combinedMicros)} — your total ` +
+        'micronutrient estimate must be at least this much, plus whatever any other food in the meal adds.'
+      : ''
+
+  const fineliReferenceBlock =
+    fineli.references.length > 0
+      ? '\n\nReference per-100g values for these foods, mentioned without a stated amount — use ' +
+        'your own judgement for the portion size actually eaten:\n' +
+        fineli.references
+          .map(
+            (f) =>
+              `- ${f.nameFi}: ${f.kcal100 ?? 0} kcal, ${f.protein100 ?? 0}g protein, ` +
+              `${f.carbs100 ?? 0}g carbs, ${f.fat100 ?? 0}g fat per 100g.`,
+          )
+          .join('\n')
       : ''
 
   return (
@@ -659,6 +660,7 @@ export function buildNutritionPrompt(text: string, microUnits: string): string {
     'cold-cut and cheese slices are thin, roughly 10-20g each), never a generic Western ' +
     'default serving. Set confidence accordingly.' +
     finnishFoodReferenceBlock(text) +
+    fineliReferenceBlock +
     knownBlock +
     ' Meal description:\n\n' +
     text
@@ -673,11 +675,7 @@ interface NutritionItemLike {
   fat: number
 }
 
-interface MicrosLike {
-  iron?: number
-  calcium?: number
-  vitaminC?: number
-  potassium?: number
+interface MicrosLike extends Partial<Record<FoodMicroKey, number>> {
   [key: string]: unknown
 }
 
@@ -700,11 +698,13 @@ function isNutritionItemLike(v: unknown): v is NutritionItemLike {
 
 /**
  * Forces the model's /api/ai/nutrition response to use exact, deterministic
- * values for any recognized Finnish foods in `text` — regardless of what the
- * model actually returned for them. Prompting alone (buildNutritionPrompt)
- * wasn't sufficient on its own: told the exact numbers, the model still
- * drifted (observed ~599 kcal vs. a true ~415 kcal for the reported meal).
- * This closes that gap unconditionally in two steps:
+ * values for any recognized foods in `text` — regardless of what the model
+ * actually returned for them — from the hand-curated FINNISH_FOOD_REFERENCE
+ * table first, then (for anything it doesn't cover) the generated Fineli
+ * data via fineliMatch.ts. Prompting alone (buildNutritionPrompt) wasn't
+ * sufficient on its own: told the exact numbers, the model still drifted
+ * (observed ~599 kcal vs. a true ~415 kcal for the reported meal). This
+ * closes that gap unconditionally in two steps:
  *   1. Any item exactly labeled as one of ours is overwritten with the exact
  *      computed numbers; missing ones are added.
  *   2. If `text` has no food left unaccounted for (hasLeftoverFood), ANY
@@ -716,36 +716,51 @@ function isNutritionItemLike(v: unknown): v is NutritionItemLike {
  * Totals are always re-derived as the sum of the resulting items array, never
  * trusted from the model's own totalKcal.
  *
- * Micronutrients (iron/calcium/vitaminC/potassium) are forced the same way,
- * with one difference: the schema reports them as a single whole-meal total,
- * not broken out per item (unlike kcal/protein/carbs/fat), so there's no way
- * to cleanly add "the known items' share" to "the model's own share for
- * anything else" without risking double-counting or under-counting. So they're
- * only overridden when the meal has NO food left unaccounted for (same
- * `noLeftover` check as the items backstop) — in that case the known items
- * ARE the whole meal, and the deterministic sum is exactly correct. When
- * there's other food in the meal too, micros are left as the model's own
- * whole-meal estimate, same as before this override existed.
+ * Micronutrients (all 11 food-sourced keys — see FoodMicroKey) are forced
+ * the same way, with one difference: the schema reports them as a single
+ * whole-meal total, not broken out per item (unlike kcal/protein/carbs/fat),
+ * so there's no way to cleanly add "the known items' share" to "the model's
+ * own share for anything else" without risking double-counting or
+ * under-counting. So they're only overridden when the meal has NO food left
+ * unaccounted for (same `noLeftover` check as the items backstop) — in that
+ * case the known items ARE the whole meal, and the deterministic sum is
+ * exactly correct. When there's other food in the meal too, micros are left
+ * as the model's own whole-meal estimate, same as before this override
+ * existed. A Fineli reference-only match (unambiguous identity, no stated
+ * amount — see fineliMatch.ts) never counts as "known" here: without a
+ * weight there's nothing deterministic to force, so it only ever affects the
+ * prompt (buildNutritionPrompt), never this override step.
  *
  * A no-op — returns `raw` unchanged — when `text` names no known items at all.
  */
 export function applyFinnishFoodOverrides(text: string, raw: unknown): unknown {
   if (raw === null || typeof raw !== 'object') return raw
   const known = extractFinnishFoodItems(text)
-  if (known.length === 0) return raw
+  const fineli = matchFineliFoods(maskKnownAliases(norm(text), known))
+  if (known.length === 0 && fineli.items.length === 0) return raw
 
   const result = raw as NutritionResultLike
   const modelItems: NutritionItemLike[] = Array.isArray(result.items)
     ? result.items.filter(isNutritionItemLike)
     : []
 
-  const noLeftover = !hasLeftoverFood(text, known)
-  const knownLabels = new Set(known.map((it) => finnishItemLabel(it)))
+  const noLeftover = !hasLeftoverFood(text, known, fineli.items)
+  const knownLabels = new Set([
+    ...known.map((it) => finnishItemLabel(it)),
+    ...fineli.items.map((it) => fineliItemLabel(it)),
+  ])
   const extraItems = noLeftover ? [] : modelItems.filter((it) => !knownLabels.has(it.name))
 
   const items: NutritionItemLike[] = [
     ...known.map((it) => ({
       name: finnishItemLabel(it),
+      kcal: it.kcal,
+      protein: it.protein,
+      carbs: it.carbs,
+      fat: it.fat,
+    })),
+    ...fineli.items.map((it) => ({
+      name: fineliItemLabel(it),
       kcal: it.kcal,
       protein: it.protein,
       carbs: it.carbs,
@@ -766,26 +781,10 @@ export function applyFinnishFoodOverrides(text: string, raw: unknown): unknown {
 
   // Every item is one of ours (nothing left over from the model) → the result is
   // fully deterministic, so the confidence label should say so.
-  const confidence = items.length === known.length ? 'high' : result.confidence
+  const confidence = items.length === known.length + fineli.items.length ? 'high' : result.confidence
 
-  const knownMicros = known.reduce(
-    (acc, it) => ({
-      iron: acc.iron + it.iron,
-      calcium: acc.calcium + it.calcium,
-      vitaminC: acc.vitaminC + it.vitaminC,
-      potassium: acc.potassium + it.potassium,
-    }),
-    { iron: 0, calcium: 0, vitaminC: 0, potassium: 0 },
-  )
-  const micros: MicrosLike | undefined = noLeftover
-    ? {
-        ...(result.micros ?? {}),
-        iron: round2(knownMicros.iron),
-        calcium: Math.round(knownMicros.calcium),
-        vitaminC: round1(knownMicros.vitaminC),
-        potassium: Math.round(knownMicros.potassium),
-      }
-    : result.micros
+  const combinedMicros = combineMicroTotals(known, fineli.items)
+  const micros: MicrosLike | undefined = noLeftover ? { ...(result.micros ?? {}), ...combinedMicros } : result.micros
 
   return {
     ...result,

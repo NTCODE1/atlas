@@ -27,6 +27,18 @@
  *                             (requires x-api-key: ATLAS_API_KEY; rate-limited)
  *   POST /api/update-targets  goal-based daily calorie + macro targets
  *                             (requires x-api-key: ATLAS_API_KEY; rate-limited)
+ *   GET  /api/sync/:domain            current value + last-write timestamp for a
+ *                                      synced domain (see src/sync.ts) (ATLAS_API_KEY)
+ *   POST /api/sync/:domain            push a domain's whole current value, last-write-wins
+ *                                      (ATLAS_API_KEY)
+ *   GET  /api/sync/journal/:yearMonth same, for the per-month journal store
+ *                                      (ATLAS_API_KEY)
+ *   POST /api/sync/journal/:yearMonth (ATLAS_API_KEY)
+ *
+ * health/workouts and every /api/sync/* domain are stored in D1 (see
+ * migrations/0001_init.sql) — health/workouts as a verbatim JSON blob per day
+ * (same semantics as before, just moved off KV), synced domains as real
+ * typed rows per domain (see src/sync.ts and src/sync/*.ts).
  *
  * Two keys by design (least privilege):
  *   API_SECRET     — write key, held only by Health Auto Export.
@@ -40,9 +52,17 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { handleAuthRoutes, requireSession } from "./auth.ts";
 import { buildNutritionPrompt, applyFinnishFoodOverrides } from "./finnishFoods.ts";
+import { handleFlatSyncRoute } from "./sync.ts";
+import { handleJournalSyncRoute, JOURNAL_SYNC_REGISTRY } from "./sync/journalSync.ts";
+import { NUTRITION_SYNC_REGISTRY } from "./sync/nutritionSync.ts";
+
+/** Every flat-keyed (`/api/sync/:domain`) registration, merged from each feature area's own file. */
+const SYNC_REGISTRY = { ...NUTRITION_SYNC_REGISTRY, ...JOURNAL_SYNC_REGISTRY };
 
 export interface Env {
   HEALTH_KV: KVNamespace;
+  /** Structured storage for health/workout ingest and every synced domain — see migrations/0001_init.sql and src/sync.ts. */
+  DB: D1Database;
   /** Write key for the Health Auto Export ingest. */
   API_SECRET: string;
   /** Read/AI key sent by the PWA. */
@@ -732,13 +752,17 @@ export default {
         return jsonResponse(JSON.stringify({ error: "forbidden" }), 403, request, env);
       }
 
-      // Store the payload verbatim so it round-trips exactly as received.
+      // Store the payload verbatim so it round-trips exactly as received —
+      // same semantics as the KV keys this replaced (health:{date}/
+      // health:latest); "latest" is just the newest row now, no separate key.
       const body = await request.text();
       const date = todayKey();
-      await Promise.all([
-        env.HEALTH_KV.put(`health:${date}`, body),
-        env.HEALTH_KV.put("health:latest", body),
-      ]);
+      await env.DB.prepare(
+        "INSERT INTO health_days (date, raw_json, received_at) VALUES (?, ?, ?) " +
+          "ON CONFLICT(date) DO UPDATE SET raw_json = excluded.raw_json, received_at = excluded.received_at",
+      )
+        .bind(date, body, Date.now())
+        .run();
 
       return jsonResponse(JSON.stringify({ stored: true, date }), 201, request, env);
     }
@@ -752,10 +776,12 @@ export default {
       // Store the payload verbatim so it round-trips exactly as received.
       const body = await request.text();
       const date = todayKey();
-      await Promise.all([
-        env.HEALTH_KV.put(`workout:${date}`, body),
-        env.HEALTH_KV.put("workout:latest", body),
-      ]);
+      await env.DB.prepare(
+        "INSERT INTO workout_days (date, raw_json, received_at) VALUES (?, ?, ?) " +
+          "ON CONFLICT(date) DO UPDATE SET raw_json = excluded.raw_json, received_at = excluded.received_at",
+      )
+        .bind(date, body, Date.now())
+        .run();
 
       return jsonResponse(JSON.stringify({ stored: true, date }), 201, request, env);
     }
@@ -1171,8 +1197,10 @@ export default {
       if (!(await authorized(request, env))) {
         return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
       }
-      const latest = await env.HEALTH_KV.get("health:latest");
-      return jsonResponse(storedJson(latest), 200, request, env);
+      const latest = await env.DB.prepare("SELECT raw_json FROM health_days ORDER BY date DESC LIMIT 1").first<{
+        raw_json: string;
+      }>();
+      return jsonResponse(storedJson(latest?.raw_json ?? null), 200, request, env);
     }
 
     // GET /api/health/:date — the payload for a specific day (read key).
@@ -1182,8 +1210,10 @@ export default {
         if (!(await authorized(request, env))) {
           return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
         }
-        const stored = await env.HEALTH_KV.get(`health:${match[1]}`);
-        return jsonResponse(storedJson(stored), 200, request, env);
+        const stored = await env.DB.prepare("SELECT raw_json FROM health_days WHERE date = ?")
+          .bind(match[1])
+          .first<{ raw_json: string }>();
+        return jsonResponse(storedJson(stored?.raw_json ?? null), 200, request, env);
       }
     }
 
@@ -1192,8 +1222,10 @@ export default {
       if (!(await authorized(request, env))) {
         return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
       }
-      const latest = await env.HEALTH_KV.get("workout:latest");
-      return jsonResponse(storedJson(latest), 200, request, env);
+      const latest = await env.DB.prepare("SELECT raw_json FROM workout_days ORDER BY date DESC LIMIT 1").first<{
+        raw_json: string;
+      }>();
+      return jsonResponse(storedJson(latest?.raw_json ?? null), 200, request, env);
     }
 
     // GET /api/workouts/:date — the workout payload for a specific day (read key).
@@ -1203,9 +1235,35 @@ export default {
         if (!(await authorized(request, env))) {
           return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
         }
-        const stored = await env.HEALTH_KV.get(`workout:${match[1]}`);
-        return jsonResponse(storedJson(stored), 200, request, env);
+        const stored = await env.DB.prepare("SELECT raw_json FROM workout_days WHERE date = ?")
+          .bind(match[1])
+          .first<{ raw_json: string }>();
+        return jsonResponse(storedJson(stored?.raw_json ?? null), 200, request, env);
       }
+    }
+
+    // GET/POST /api/sync/journal/:yearMonth — the per-month journal store (read/AI key).
+    if (pathname.startsWith("/api/sync/journal/")) {
+      if (!(await authorized(request, env))) {
+        return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
+      }
+      const res = await handleJournalSyncRoute(request, env, pathname, (raw, status) =>
+        jsonResponse(raw, status, request, env),
+      );
+      if (res) return res;
+    }
+
+    // GET/POST /api/sync/:domain — every other synced domain (read/AI key).
+    const syncDomainMatch = pathname.match(/^\/api\/sync\/([a-zA-Z]+)$/);
+    if (syncDomainMatch) {
+      if (!(await authorized(request, env))) {
+        return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
+      }
+      const res = await handleFlatSyncRoute(request, env, syncDomainMatch[1], SYNC_REGISTRY, (raw, status) =>
+        jsonResponse(raw, status, request, env),
+      );
+      if (res) return res;
+      return jsonResponse(JSON.stringify({ error: "unknown sync domain" }), 404, request, env);
     }
 
     return jsonResponse(JSON.stringify({ error: "not found" }), 404, request, env);

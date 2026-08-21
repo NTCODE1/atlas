@@ -1,4 +1,4 @@
-import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { todayISO } from '../workouts'
 import type { MicroAmounts } from '../micros'
 
@@ -15,12 +15,14 @@ export interface Supplement {
 /**
  * Supplement persistence, mirroring useMeals/useWorkouts: a localStorage list
  * plus add/delete helpers and a `todaySupplements` view. Micros feed the
- * Nutrition micronutrient totals alongside meals.
+ * Nutrition micronutrient totals alongside meals. Synced through the Worker
+ * (see useSyncedStorage.ts / nutritionSync.ts's "supplements" domain).
  */
 export function useSupplements() {
-  const [supplements, setSupplements] = useLocalStorage<Supplement[]>(
+  const [supplements, setSupplements] = useSyncedStorage<Supplement[]>(
     'atlas.nutrition.supplements',
     [],
+    'supplements',
   )
 
   const addSupplement = (name: string, dosage: string, micros?: MicroAmounts): Supplement => {

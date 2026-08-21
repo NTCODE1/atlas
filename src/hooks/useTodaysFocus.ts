@@ -1,4 +1,4 @@
-import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { useJournalMonth, sortEntriesByTime } from './useJournalMonth'
 import { todayISO } from '../workouts'
 import type { DayEntryV2 } from '../data'
@@ -30,7 +30,11 @@ export function useTodaysFocus(): {
   const [month] = useJournalMonth(year, monthIndex)
   const entries = sortEntriesByTime(month[day]?.entries ?? [])
 
-  const [selection, setSelection] = useLocalStorage<FocusSelection>('atlas.home.focus', DEFAULT_SELECTION)
+  const [selection, setSelection] = useSyncedStorage<FocusSelection>(
+    'atlas.home.focus',
+    DEFAULT_SELECTION,
+    'homeFocus',
+  )
   const focusEntry =
     selection.date === today ? (entries.find((e) => e.id === selection.entryId) ?? null) : null
 

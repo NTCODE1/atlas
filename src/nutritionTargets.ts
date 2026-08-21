@@ -1,4 +1,4 @@
-import { useLocalStorage } from './hooks/useLocalStorage'
+import { useSyncedStorage } from './hooks/useSyncedStorage'
 import { nutrition } from './data'
 
 /**
@@ -31,12 +31,16 @@ export const DEFAULT_TARGETS: MacroTargets = {
   fat: macroTarget('Fat', 70),
 }
 
-/** Read/write the daily targets. Merged over defaults so older stores gain fields. */
+/**
+ * Read/write the daily targets. Merged over defaults so older stores gain
+ * fields. Synced through the Worker (see hooks/useSyncedStorage.ts /
+ * atlas-api/src/sync/nutritionSync.ts's "nutritionTargets" domain).
+ */
 export function useNutritionTargets(): {
   targets: MacroTargets
   setTargets: (t: MacroTargets) => void
 } {
-  const [stored, setStored] = useLocalStorage<MacroTargets>(TARGETS_KEY, DEFAULT_TARGETS)
+  const [stored, setStored] = useSyncedStorage<MacroTargets>(TARGETS_KEY, DEFAULT_TARGETS, 'nutritionTargets')
   return { targets: { ...DEFAULT_TARGETS, ...stored }, setTargets: setStored }
 }
 
@@ -54,10 +58,14 @@ export interface GoalTargetEntry {
   reasoning?: string
 }
 
-/** Read/write the goal history log (newest handling is up to callers). */
+/**
+ * Read/write the goal history log (newest handling is up to callers). Synced
+ * through the Worker (see hooks/useSyncedStorage.ts / nutritionSync.ts's
+ * "goalTargetLog" domain).
+ */
 export function useGoalHistory(): [
   GoalTargetEntry[],
   React.Dispatch<React.SetStateAction<GoalTargetEntry[]>>,
 ] {
-  return useLocalStorage<GoalTargetEntry[]>(HISTORY_KEY, [])
+  return useSyncedStorage<GoalTargetEntry[]>(HISTORY_KEY, [], 'goalTargetLog')
 }

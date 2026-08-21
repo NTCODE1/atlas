@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { todayISO } from '../workouts'
 import { pruneByDate } from '../dataRetention'
 import type { Meal, MealType } from '../data'
@@ -14,10 +14,12 @@ export type MealMacros = Partial<Pick<MacroTotals, 'kcal' | 'protein' | 'carbs' 
 /**
  * Meal persistence, mirroring useWorkouts: a localStorage-backed list plus
  * add/delete helpers and a `todayMeals` view. Meals are date-stamped so the
- * Nutrition screen can sum just today's entries.
+ * Nutrition screen can sum just today's entries. Synced through the Worker
+ * (see useSyncedStorage.ts / atlas-api/src/sync/nutritionSync.ts's "meals"
+ * domain) so logging a meal on one device shows up on another.
  */
 export function useMeals() {
-  const [meals, setMeals] = useLocalStorage<Meal[]>('atlas.nutrition.meals', [])
+  const [meals, setMeals] = useSyncedStorage<Meal[]>('atlas.nutrition.meals', [], 'meals')
 
   // Meals are a short daily log (only "today" is ever shown) — drop entries
   // older than 7 days rather than keeping them forever.

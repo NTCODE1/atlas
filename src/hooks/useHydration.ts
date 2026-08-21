@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { useSettings } from '../settingsContext'
 import { todayISO } from '../workouts'
 import { pruneByDate } from '../dataRetention'
@@ -42,10 +43,12 @@ export const DRINK_PRESETS: { label: string; ml: number }[] = [
 
 /**
  * Hydration persistence, mirroring useMeals: a localStorage list of drinks plus
- * add/delete helpers, a `todayDrinks` view, and today's total in ml.
+ * add/delete helpers, a `todayDrinks` view, and today's total in ml. Synced
+ * through the Worker (see useSyncedStorage.ts / nutritionSync.ts's
+ * "hydration" domain).
  */
 export function useHydration() {
-  const [drinks, setDrinks] = useLocalStorage<Drink[]>('atlas.nutrition.hydration', [])
+  const [drinks, setDrinks] = useSyncedStorage<Drink[]>('atlas.nutrition.hydration', [], 'hydration')
   // Read-only: caffeinated drinks logged on the Energy screen count toward
   // hydration too, so the whole app shows one connected intake number.
   const [caffeineDoses] = useLocalStorage<CaffeineDose[]>('atlas.caffeine.doses', [])

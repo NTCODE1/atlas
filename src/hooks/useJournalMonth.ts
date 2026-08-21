@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useLocalStorage, writeLocalStorage } from './useLocalStorage'
+import { writeLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import {
   journalSeed,
   type DayEntryV2,
@@ -11,6 +12,8 @@ import {
 
 const v2Key = (year: number, monthIndex: number) => `atlas.journal.v2.${year}-${monthIndex}`
 const legacyKey = (year: number, monthIndex: number) => `atlas.journal.${year}-${monthIndex}`
+/** Worker sync path for one month — see atlas-api/src/sync/journalSync.ts's per-month route. */
+const syncPath = (year: number, monthIndex: number) => `journal/${year}-${monthIndex}`
 
 /**
  * One-time wipe of all stored journal/calendar data so the calendar starts
@@ -71,9 +74,11 @@ function readJSON<T>(key: string): T | null {
 /**
  * Month journal store with lazy v1 → v2 migration. Reads the v2 key when
  * present; otherwise migrates the legacy key (or, failing that, the bundled
- * seed for the current month). The migrated value becomes useLocalStorage's
+ * seed for the current month). The migrated value becomes useSyncedStorage's
  * initial state and is persisted to the v2 key on first render — the legacy
- * key is never written or deleted, so rolling back stays safe.
+ * key is never written or deleted, so rolling back stays safe. Synced
+ * through the Worker per-month (see atlas-api/src/sync/journalSync.ts) —
+ * one month's push/pull never touches another month's data.
  */
 export function useJournalMonth(year: number, monthIndex: number) {
   const [initial] = useState<JournalMonthV2>(() => {
@@ -84,7 +89,7 @@ export function useJournalMonth(year: number, monthIndex: number) {
     return migrateMonth(legacy ?? journalSeed)
   })
 
-  return useLocalStorage<JournalMonthV2>(v2Key(year, monthIndex), initial)
+  return useSyncedStorage<JournalMonthV2>(v2Key(year, monthIndex), initial, syncPath(year, monthIndex))
 }
 
 /**
@@ -115,6 +120,14 @@ export const sortEntriesByTime = (entries: DayEntryV2[]): DayEntryV2[] =>
  * is `{ date: 'YYYY-MM-DD', entry }`. Entries are grouped by month, merged into
  * the existing day records, and written directly to each month's v2 key with a
  * sync broadcast — so an open Journal screen on an affected month updates live.
+ *
+ * Note: this bypasses useSyncedStorage's own push, since it writes straight to
+ * localStorage rather than through a mounted useJournalMonth hook. A mounted
+ * hook for the affected month still picks it up locally (the same broadcast
+ * useLocalStorage already does) and pushes it on its next debounced push —
+ * but a month nobody currently has open only syncs to the Worker the next
+ * time it's actually viewed. Acceptable for now (calendar-parsed entries are
+ * an infrequent path); revisit if that lag turns out to matter.
  */
 export function addJournalEntries(items: { date: string; entry: DayEntryV2 }[]): void {
   if (typeof window === 'undefined' || items.length === 0) return
