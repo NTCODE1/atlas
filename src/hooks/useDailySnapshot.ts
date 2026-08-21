@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useHealth } from '../api/healthContext'
 import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import { useWorkouts } from './useWorkouts'
 import { useWatchWorkouts } from '../api/workoutContext'
 import { useReadiness } from './useReadiness'
@@ -24,11 +25,14 @@ import {
  * and merges into today's record (idempotent per day). Single owner of the
  * store. hrv/restingHr are persisted as the *raw* live reading (undefined when
  * not live) rather than a fallback-substituted value, so rolling baselines
- * only ever average real readings.
+ * only ever average real readings. Synced through the Worker (see
+ * useSyncedStorage.ts / atlas-api/src/sync/snapshotSync.ts's
+ * "dailySnapshots" domain) so a device that's had this rebuilding locally
+ * doesn't lose its rolling baselines just for being the "other" device.
  */
 export function useDailySnapshot(): void {
   const { health, loading } = useHealth()
-  const [, setStore] = useLocalStorage<SnapshotStore>('atlas.snapshots', {})
+  const [, setStore] = useSyncedStorage<SnapshotStore>('atlas.snapshots', {}, 'dailySnapshots')
   // Weight is logged separately; read (don't own) the latest entry for today.
   const [weightEntries] = useLocalStorage<WeightEntry[]>('atlas.weight.entries', [])
   // Caffeine is logged separately too; read (don't own) today's doses for the

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Target } from 'lucide-react'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
+import { useSyncedStorage } from '../../hooks/useSyncedStorage'
 import { sortGoals, type FinanceSavings, type Goal } from '../../goals'
 import { DEFAULT_FINANCE, type FinanceData } from '../../finance'
 import GoalBar from './GoalBar'
@@ -11,7 +12,7 @@ const PREVIEW_COUNT = 3
 
 /** Goals card at the top of the Motivation tab: milestone + numeric goals. */
 export default function GoalsSection() {
-  const [goals, setGoals] = useLocalStorage<Goal[]>('atlas.goals', [])
+  const [goals, setGoals] = useSyncedStorage<Goal[]>('atlas.goals', [], 'goals')
   // Read-only mirror of the Finance savings goal (owned by the Finance tab).
   const [finance] = useLocalStorage<FinanceData>('atlas.finance', DEFAULT_FINANCE)
   const financeSavings: FinanceSavings = {

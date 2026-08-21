@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useSyncedStorage } from '../hooks/useSyncedStorage'
 import { useCountUp } from '../hooks/useCountUp'
 import {
   DEFAULT_FINANCE,
@@ -25,7 +25,7 @@ const formatDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 
 export default function Finance() {
-  const [data, setData] = useLocalStorage<FinanceData>('atlas.finance', DEFAULT_FINANCE)
+  const [data, setData] = useSyncedStorage<FinanceData>('atlas.finance', DEFAULT_FINANCE, 'finance')
   const [sheet, setSheet] = useState<Sheet>(null)
 
   const patch = (fields: Partial<FinanceData>) => setData((prev) => ({ ...prev, ...fields }))

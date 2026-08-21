@@ -97,14 +97,14 @@ Two stores, split by what they hold:
 - **Cloudflare D1** (`DB` binding, see `migrations/0001_init.sql`) — everything
   else: `health`/`workout` ingest (verbatim JSON blobs, same semantics as
   before, just moved off KV) and every synced domain (real typed columns per
-  domain). **Live:** meals, hydration, supplements, nutrition targets, goal
-  history, journal (calendar + today's focus), weight log, caffeine doses,
-  fasting state, habit definitions + check-ins, deep work, and settings
-  (+ avatar). **Schema only, not yet wired to a hook** (see
-  `migrations/0001_init.sql` for the full table list): Training (exercises/
-  sessions/sets/VO2max), Finance, Motivation (+ goals), and the daily
-  snapshot rollup — bringing one online is the same mechanical pattern
-  described below.
+  domain). **All live:** meals, hydration, supplements, nutrition targets,
+  goal history, journal (calendar + today's focus), weight log, caffeine
+  doses, fasting state, habit definitions + check-ins, deep work, settings
+  (+ avatar), Training (exercise library, nested workout sessions, VO2max),
+  Finance, Motivation (photo board + goals with milestones), and the daily
+  snapshot rollup. `assistant_messages` (chat history) has a table in the
+  schema but is the one domain deliberately left unsynced — lowest value of
+  everything tracked, not worth the round-trip.
 
 **Sync model** (`src/sync.ts`, `src/sync/*.ts`): each synced domain corresponds
 to one browser localStorage key on the frontend (`src/hooks/useSyncedStorage.ts`
@@ -121,12 +121,16 @@ on at most two devices, not a general offline-multi-writer sync engine — two
 edits made offline on both devices before either syncs will have the later
 one win outright for that whole domain, not merge.
 
-Bringing a not-yet-synced domain online (see `migrations/0001_init.sql` for
-which ones still have a table but no live route) is: write its
-`toRows`/`fromRows` pair in a `src/sync/*.ts` file, register it, swap the
-frontend hook's `useLocalStorage` call for `useSyncedStorage` — the same
-pattern `nutritionSync.ts`/`journalSync.ts` and their hook call sites already
-follow, so it's mechanical, not new design work.
+Bringing a new domain online (e.g. `assistant_messages`, or anything added
+later) is: write its `toRows`/`fromRows` pair in a `src/sync/*.ts` file,
+register it, swap the frontend hook's `useLocalStorage` call for
+`useSyncedStorage` — the same pattern every `sync/*.ts` file and its hook
+call site(s) already follow, so it's mechanical, not new design work. The
+one thing worth judgment per domain: whether a push should be a full
+replace (most domains — local already holds everything) or scoped to a
+retention window (only meals/hydration/caffeine need this, since they're
+the only domains the frontend itself locally prunes — see
+`sync/nutritionSync.ts`'s comment for why that distinction matters).
 
 **Recovering data that only ever existed in one browser's localStorage**
 (e.g. months of real phone data, pre-dating this sync layer): there's no
@@ -244,10 +248,11 @@ automatically unless `ANTHROPIC_API_KEY` is set (env var or `.dev.vars`).
 real-world values for both layers — it costs real Anthropic API calls, so
 it isn't run as part of `npm test`.
 
-`src/sync.test.ts`, `src/sync/journalSync.test.ts`, and `src/sync/phase2.test.ts`
-check the D1 sync layer (last-write-wins, the retention-window scoping for
-meals/hydration/caffeine, per-month journal date reconstruction and
-isolation, round-trip field fidelity for every live domain) against a **real
+`src/sync.test.ts`, `src/sync/journalSync.test.ts`, `src/sync/phase2.test.ts`,
+and `src/sync/phase3.test.ts` check the D1 sync layer (last-write-wins, the
+retention-window scoping for meals/hydration/caffeine, per-month journal date
+reconstruction and isolation, nested-relational round-tripping for workout
+sessions/goals, and round-trip field fidelity for every live domain) against a **real
 local D1 binding** — no mocking — via `wrangler`'s `getPlatformProxy()`,
 reusing the same local Miniflare SQLite state `wrangler d1 migrations apply
 atlas-db --local` sets up (free, no network, so these run as part of the

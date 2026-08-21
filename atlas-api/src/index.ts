@@ -60,6 +60,10 @@ import { ENERGY_SYNC_REGISTRY } from "./sync/energySync.ts";
 import { HABITS_SYNC_REGISTRY } from "./sync/habitsSync.ts";
 import { DEEP_WORK_SYNC_REGISTRY } from "./sync/deepWorkSync.ts";
 import { SETTINGS_SYNC_REGISTRY } from "./sync/settingsSync.ts";
+import { TRAINING_SYNC_REGISTRY } from "./sync/trainingSync.ts";
+import { FINANCE_SYNC_REGISTRY } from "./sync/financeSync.ts";
+import { MOTIVATION_SYNC_REGISTRY } from "./sync/motivationSync.ts";
+import { SNAPSHOT_SYNC_REGISTRY } from "./sync/snapshotSync.ts";
 
 /** Every flat-keyed (`/api/sync/:domain`) registration, merged from each feature area's own file. */
 const SYNC_REGISTRY = {
@@ -70,6 +74,10 @@ const SYNC_REGISTRY = {
   ...HABITS_SYNC_REGISTRY,
   ...DEEP_WORK_SYNC_REGISTRY,
   ...SETTINGS_SYNC_REGISTRY,
+  ...TRAINING_SYNC_REGISTRY,
+  ...FINANCE_SYNC_REGISTRY,
+  ...MOTIVATION_SYNC_REGISTRY,
+  ...SNAPSHOT_SYNC_REGISTRY,
 };
 
 export interface Env {
@@ -1267,7 +1275,11 @@ export default {
     }
 
     // GET/POST /api/sync/:domain — every other synced domain (read/AI key).
-    const syncDomainMatch = pathname.match(/^\/api\/sync\/([a-zA-Z]+)$/);
+    // [a-zA-Z0-9]+ (not just letters) — "vo2maxEntries" has a digit in it,
+    // and a stricter pattern here silently 404s instead of ever reaching the
+    // auth check or the "unknown domain" response, which is worse: it looks
+    // exactly like a routing mistake instead of a clear rejection.
+    const syncDomainMatch = pathname.match(/^\/api\/sync\/([a-zA-Z0-9]+)$/);
     if (syncDomainMatch) {
       if (!(await authorized(request, env))) {
         return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);

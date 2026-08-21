@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useLocalStorage } from './useLocalStorage'
+import { useSyncedStorage } from './useSyncedStorage'
 import {
   EXERCISE_SEED,
   buildExerciseIndex,
@@ -13,18 +13,29 @@ import {
 } from '../workouts'
 
 /**
- * Workout persistence: exercise library + logged sessions. Used only inside
- * the Training screen tree, so plain useLocalStorage is safe (single owner).
- * Raw localStorage values may be older shapes (pre-dating gym/cardio support)
- * — normalized on every read so the rest of the app only ever sees the
- * current shape.
+ * Workout persistence: exercise library + logged sessions. Also read
+ * (sessions only) from useDailySnapshot.ts at the app root for training-load
+ * — so its two keys may end up synced from two mounted instances at once
+ * when the Training screen is also open; harmless (LWW, same underlying
+ * localStorage broadcast keeps both instances' values identical), just a
+ * little redundant network traffic, not worth the added complexity of
+ * splitting this hook to avoid it. Synced through the Worker (see
+ * useSyncedStorage.ts / atlas-api/src/sync/trainingSync.ts's "exercises"/
+ * "workoutSessions" domains). Raw localStorage values may be older shapes
+ * (pre-dating gym/cardio support) — normalized on every read so the rest of
+ * the app only ever sees the current shape.
  */
 export function useWorkouts() {
-  const [rawExercises, setExercises] = useLocalStorage<Exercise[]>(
+  const [rawExercises, setExercises] = useSyncedStorage<Exercise[]>(
     'atlas.workouts.exercises',
     EXERCISE_SEED,
+    'exercises',
   )
-  const [rawSessions, setSessions] = useLocalStorage<WorkoutSession[]>('atlas.workouts.sessions', [])
+  const [rawSessions, setSessions] = useSyncedStorage<WorkoutSession[]>(
+    'atlas.workouts.sessions',
+    [],
+    'workoutSessions',
+  )
 
   const exercises = useMemo(() => rawExercises.map(normalizeExercise), [rawExercises])
   const sessions = useMemo(() => rawSessions.map(normalizeSession), [rawSessions])

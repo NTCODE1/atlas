@@ -4,7 +4,7 @@ import { useWorkouts } from '../hooks/useWorkouts'
 import { useWatchWorkouts } from '../api/workoutContext'
 import { useHealth } from '../api/healthContext'
 import { useSettings } from '../settingsContext'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useSyncedStorage } from '../hooks/useSyncedStorage'
 import { todayISO, weeklyLoadDays, weeklyVolume, type WorkoutSession } from '../workouts'
 import { weeklyCardioStats, weeklyCardioDays } from '../api/workoutMapper'
 import type { Vo2MaxEntry } from '../vo2max'
@@ -57,7 +57,11 @@ export default function Training() {
 
   const { workouts } = useWatchWorkouts()
   const { vo2MaxSeries } = useHealth()
-  const [vo2MaxEntries, setVo2MaxEntries] = useLocalStorage<Vo2MaxEntry[]>('atlas.vo2max.entries', [])
+  const [vo2MaxEntries, setVo2MaxEntries] = useSyncedStorage<Vo2MaxEntry[]>(
+    'atlas.vo2max.entries',
+    [],
+    'vo2maxEntries',
+  )
 
   const [tab, setTab] = useState<Tab>('log')
   // Which session the Log tab shows — an independent entry, not tied to "today".

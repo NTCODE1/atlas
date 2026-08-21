@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { ImagePlus, Plus } from 'lucide-react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useSyncedStorage } from '../hooks/useSyncedStorage'
 import { downscaleImage } from '../image'
 import { newId, type MotivationItem } from '../motivation'
 import GoalsSection from '../components/motivation/GoalsSection'
@@ -8,7 +8,7 @@ import MotivationCard from '../components/motivation/MotivationCard'
 import ImageViewer from '../components/motivation/ImageViewer'
 
 export default function Motivation() {
-  const [items, setItems] = useLocalStorage<MotivationItem[]>('atlas.motivation', [])
+  const [items, setItems] = useSyncedStorage<MotivationItem[]>('atlas.motivation', [], 'motivationItems')
   const [viewing, setViewing] = useState<MotivationItem | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
