@@ -1,6 +1,6 @@
 /**
  * Maps a raw Health Auto Export (HAE) payload into the flat, screen-friendly
- * shape the Atlas UI expects (see ../data.ts for the hard-coded equivalents).
+ * shape the Apex UI expects (see ../data.ts for the hard-coded equivalents).
  *
  * HAE posts JSON shaped like:
  *   {
@@ -77,7 +77,7 @@ interface Metric {
   data?: MetricDataPoint[]
 }
 
-/** The mapped output consumed by Atlas screens. Every field is nullable so a
+/** The mapped output consumed by Apex screens. Every field is nullable so a
  *  missing metric falls back per-field to the hard-coded data.ts value. */
 export interface HealthData {
   /** Resting HR (bpm) → Readiness + Sleep screens. From `resting_heart_rate` only. */

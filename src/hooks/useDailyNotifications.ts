@@ -7,7 +7,7 @@ import { readJournalDay } from './useJournalMonth'
 import { dateISO } from '../habits'
 
 /**
- * Fires the daily notification checks once the app is open (Atlas has no push
+ * Fires the daily notification checks once the app is open (Apex has no push
  * server): important journal entries for today/tomorrow, and a low sleep
  * score. Deduped per entry / per day via the atlas.notify.log key.
  */

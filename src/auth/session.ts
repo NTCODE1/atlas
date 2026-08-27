@@ -1,5 +1,5 @@
 /**
- * Passkey session-token storage for the Atlas PWA.
+ * Passkey session-token storage for the Apex PWA.
  *
  * The token is a Worker-signed HMAC string (`<payload>.<sig>`) obtained after a
  * successful passkey unlock (see `passkey.ts`). We keep it in localStorage and

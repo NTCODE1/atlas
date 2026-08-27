@@ -1,6 +1,6 @@
 /**
  * Generic sync dispatcher for /api/sync/* — see the plan notes ("Add
- * Cloudflare D1 so Atlas data syncs across devices") for the full design.
+ * Cloudflare D1 so Apex data syncs across devices") for the full design.
  * In short: every synced domain corresponds to exactly one browser
  * localStorage key on the frontend (see src/hooks/useSyncedStorage.ts). The
  * client pushes/pulls that key's WHOLE current value as one JSON blob, each

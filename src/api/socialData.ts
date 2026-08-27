@@ -1,5 +1,5 @@
 /**
- * Social-media follower-history fetcher for the Atlas "Social" tab.
+ * Social-media follower-history fetcher for the Apex "Social" tab.
  *
  * Mirrors healthData.ts: reads from the atlas-api Worker (GET /api/social),
  * degrades to an empty result if the Worker is unset / unreachable / slow, and

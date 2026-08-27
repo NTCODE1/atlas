@@ -10,9 +10,9 @@ numbers into D1 and keeps the OAuth tokens alive on its own.
 lifetime likes — one snapshot per account per day.
 
 **Where the tokens live:** the `social_accounts` table in `atlas-db` (same
-database as the rest of Atlas). They're read-only profile-stats tokens.
+database as the rest of Apex). They're read-only profile-stats tokens.
 
-You'll need, from the main Atlas setup:
+You'll need, from the main Apex setup:
 
 - your Worker URL — `https://<your-worker>.workers.dev`
 - your `API_SECRET` (the **write** key, the one Health Auto Export uses)

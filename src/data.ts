@@ -1,5 +1,5 @@
 /**
- * Hard-coded fake data for the Atlas Home screen.
+ * Hard-coded fake data for the Apex Home screen.
  * This stands in for real integrations — everything the UI renders comes from here.
  */
 import type { IconId } from './icons'

@@ -1,4 +1,4 @@
-# Netlify build + hosting config for the Atlas PWA (Vite/React).
+# Netlify build + hosting config for the Apex PWA (Vite/React).
 
 [build]
   command = "npm run build"

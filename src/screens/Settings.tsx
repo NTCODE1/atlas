@@ -342,7 +342,7 @@ export default function Settings({ onClose }: SettingsProps) {
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-text-muted">
-            Atlas has no server — reminders fire while the app is open.
+            Apex has no server — reminders fire while the app is open.
           </p>
         </div>
 

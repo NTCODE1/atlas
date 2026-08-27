@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Atlas design system
+   Apex design system
    Monochrome, premium. Near-black canvas, barely-lighter card surfaces with
    hairline borders, white/grey accents. Colour is reserved for meaning:
    water blue, macro rings, meal-search rainbow, amber importance, rose alerts.
@@ -90,11 +90,6 @@ body {
 /* Hairline border helper */
 .hairline {
   border: 1px solid var(--color-border);
-}
-
-/* The white mountain mark needs an edge to read on light surfaces. */
-:root[data-theme='light'] .atlas-mark {
-  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 
 /* Subtle glow for big hero numbers — soft white on dark, whisper on light. */

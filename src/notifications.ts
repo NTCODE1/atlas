@@ -1,5 +1,5 @@
 /**
- * Browser notifications. Atlas has no push server, so these fire while the
+ * Browser notifications. Apex has no push server, so these fire while the
  * app is open (or installed as a PWA with the service worker registered).
  */
 

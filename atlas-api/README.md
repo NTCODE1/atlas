@@ -1,7 +1,7 @@
-# Atlas API
+# Apex API
 
 A tiny [Cloudflare Worker](https://developers.cloudflare.com/workers/) that backs
-the Atlas personal dashboard. It receives health data from the iOS app
+the Apex personal dashboard. It receives health data from the iOS app
 **Health Auto Export** and stores it — along with every other data domain the PWA
 tracks (nutrition, journal, and, over time, the rest — see "Data storage" below)
 — in **Cloudflare D1** so a phone and a computer see the same data, not just

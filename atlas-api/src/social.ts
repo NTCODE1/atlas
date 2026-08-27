@@ -1,5 +1,5 @@
 /**
- * Social-media follower tracking for the Atlas "Social" tab.
+ * Social-media follower tracking for the Apex "Social" tab.
  *
  * Server-owned and cron-driven (unlike src/sync.ts's client-pushed domains):
  * once a day the Worker's `scheduled` handler calls syncAllAccounts(), which

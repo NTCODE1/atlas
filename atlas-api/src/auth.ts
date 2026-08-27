@@ -1,5 +1,5 @@
 /**
- * Passkey (WebAuthn) auth for the Atlas API.
+ * Passkey (WebAuthn) auth for the Apex API.
  *
  * The PWA proves possession of a device passkey (Face ID / fingerprint /
  * screen-lock) to the Worker, which then issues a short-lived HMAC session
@@ -178,9 +178,9 @@ export async function handleAuthRoutes(
     const label = body.label ? String(body.label).slice(0, 40) : undefined;
     const creds = await loadCreds(env);
     const options = await generateRegistrationOptions({
-      rpName: "ATLAS",
+      rpName: "Apex",
       rpID,
-      userName: "atlas",
+      userName: "apex",
       userID: USER_ID,
       attestationType: "none",
       excludeCredentials: creds.map((c) => ({ id: c.id, transports: c.transports })),

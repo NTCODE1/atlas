@@ -1,5 +1,5 @@
 /**
- * Passkey (WebAuthn) enrollment + unlock for the Atlas PWA.
+ * Passkey (WebAuthn) enrollment + unlock for the Apex PWA.
  *
  * Thin wrappers over @simplewebauthn/browser that talk to the Worker's
  * `/api/auth/*` routes. `register` enrolls this device (guarded by the one-time

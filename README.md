@@ -1,4 +1,4 @@
-# Atlas
+# Apex
 
 A dark, premium personal dashboard — built as an installable PWA.
 
@@ -32,7 +32,7 @@ src/
   App.tsx              # phone-width shell layout
   components/
     StatusBar.tsx      # cosmetic iOS status bar (auto-hides when installed)
-    Header.tsx         # Atlas logo + notification bell
+    Header.tsx         # Apex logo + notification bell
     TabBar.tsx         # Home / Energy / Sleep / Training / Journal
   screens/
     Home.tsx           # blank for now

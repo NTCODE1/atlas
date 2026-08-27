@@ -10,13 +10,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       // Precache the assistant orb video (small) alongside the default globs so
       // it loads instantly and works offline.
       workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,mp4}'] },
       manifest: {
-        name: 'Atlas',
-        short_name: 'Atlas',
+        name: 'Apex',
+        short_name: 'Apex',
         description: 'Your personal dashboard.',
         theme_color: '#08090C',
         background_color: '#08090C',

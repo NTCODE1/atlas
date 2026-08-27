@@ -17,7 +17,7 @@ const STEPS = ['units', 'sex', 'body', 'activity', 'goal', 'targets'] as const
 type StepId = (typeof STEPS)[number]
 
 const STEP_COPY: Record<StepId, { title: string; subtitle: string }> = {
-  units: { title: 'Units', subtitle: 'How should Atlas show your measurements?' },
+  units: { title: 'Units', subtitle: 'How should Apex show your measurements?' },
   sex: { title: 'Sex', subtitle: 'Used for your calorie estimate (Mifflin-St Jeor).' },
   body: { title: 'About you', subtitle: 'Age, height, and current weight.' },
   activity: { title: 'Activity level', subtitle: 'How active is your typical week?' },

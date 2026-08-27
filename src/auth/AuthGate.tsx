@@ -10,6 +10,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Fingerprint, Loader2 } from 'lucide-react'
+import { ApexWordmark } from '../components/Header'
 import { hasValidToken } from './session'
 import { login, register, passkeyReady } from './passkey'
 
@@ -59,12 +60,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         className="flex h-dvh w-full max-w-[420px] flex-col items-center justify-center px-8"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="grid h-20 w-20 place-items-center rounded-full border border-border-strong bg-fill">
-          <Fingerprint className="h-9 w-9 text-accent" strokeWidth={1.5} />
-        </div>
-
-        <h1 className="mt-6 text-2xl font-semibold tracking-tight">ATLAS</h1>
-        <p className="mt-1.5 text-center text-sm text-text-muted">
+        <ApexWordmark className="h-9 w-auto text-text" />
+        <p className="mt-5 text-center text-sm text-text-muted">
           {ready
             ? mode === 'unlock'
               ? 'Unlock with Face ID or your fingerprint.'

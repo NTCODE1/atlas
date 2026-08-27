@@ -1,5 +1,5 @@
 /**
- * Atlas API — Cloudflare Worker backend.
+ * Apex API — Cloudflare Worker backend.
  *
  * Receives health data from the iOS app "Health Auto Export" and stores it in
  * Cloudflare KV, and proxies AI calls to Anthropic Claude so the API key stays
@@ -191,9 +191,9 @@ const WELLBEING_DOMAIN_PROMPT =
   "(sleep, training, nutrition, readiness) bears on the question, base the answer on those " +
   "specific numbers instead of generic advice.";
 
-/** System instruction that gives the assistant its ATLAS persona. */
+/** System instruction that gives the assistant its Apex persona. */
 const CHAT_SYSTEM_PROMPT =
-  "You are ATLAS, a warm, concise personal wellbeing assistant inside a health " +
+  "You are Apex, a warm, concise personal wellbeing assistant inside a health " +
   "dashboard app that tracks sleep, energy, training, nutrition, and mood." +
   WELLBEING_DOMAIN_PROMPT +
   TERSE_STYLE;

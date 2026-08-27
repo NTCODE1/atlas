@@ -1,5 +1,5 @@
 /**
- * Health data fetcher for the Atlas PWA.
+ * Health data fetcher for the Apex PWA.
  *
  * Reads real health data from the atlas-api Cloudflare Worker, but always
  * degrades gracefully to the hard-coded data in `../data` if the API is
