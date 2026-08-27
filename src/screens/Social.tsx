@@ -69,6 +69,25 @@ function DeltaBadge({ label, value }: { label: string; value: number | null }) {
   )
 }
 
+function AccountAvatar({ url, Icon }: { url: string | null; Icon: typeof Camera }) {
+  const [broken, setBroken] = useState(false)
+  return (
+    <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-fill text-text">
+      {url && !broken ? (
+        <img
+          src={url}
+          alt=""
+          className="h-full w-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <Icon size={18} strokeWidth={1.9} />
+      )}
+    </span>
+  )
+}
+
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
@@ -96,9 +115,7 @@ function AccountCard({ account, rangeDays }: { account: SocialAccount; rangeDays
   return (
     <div className="glass mt-4 rounded-3xl px-5 py-5">
       <div className="flex items-center gap-2.5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-fill text-text">
-          <Icon size={18} strokeWidth={1.9} />
-        </span>
+        <AccountAvatar url={account.avatarUrl} Icon={Icon} />
         <div className="min-w-0">
           <p className="truncate font-display text-sm font-semibold text-text">{account.label}</p>
           <p className="truncate text-xs text-text-muted">

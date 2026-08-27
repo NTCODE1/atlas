@@ -28,6 +28,8 @@ export interface SocialAccount {
   platform: SocialPlatform
   label: string
   username: string | null
+  /** Time-limited signed CDN URL from the platform; may be stale/expired — render with an icon fallback. */
+  avatarUrl: string | null
   lastSyncAt: number | null
   lastError: string | null
   points: SocialPoint[]

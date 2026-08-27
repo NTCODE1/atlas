@@ -42,6 +42,7 @@ interface AccountRow {
   label: string;
   username: string | null;
   external_id: string | null;
+  avatar_url: string | null;
   access_token: string;
   refresh_token: string | null;
   token_expires_at: number | null;
@@ -58,6 +59,8 @@ interface StatsSample {
   likes: number | null;
   username: string | null;
   externalId: string | null;
+  /** Profile picture URL as reported by the platform — a time-limited signed CDN URL, refreshed on every sync. */
+  avatarUrl: string | null;
 }
 
 function num(v: unknown): number | null {
@@ -94,7 +97,7 @@ async function ensureInstagramToken(
 }
 
 async function fetchInstagram(token: string, externalId: string | null): Promise<StatsSample> {
-  const fields = "user_id,username,followers_count,follows_count,media_count";
+  const fields = "user_id,username,followers_count,follows_count,media_count,profile_picture_url";
   const res = await fetch(`${IG_BASE}/v23.0/me?fields=${fields}&access_token=${encodeURIComponent(token)}`);
   const body = await res.text();
   if (!res.ok) throw new Error(`Instagram /me ${res.status}: ${body.slice(0, 200)}`);
@@ -104,6 +107,7 @@ async function fetchInstagram(token: string, externalId: string | null): Promise
     followers_count?: number;
     follows_count?: number;
     media_count?: number;
+    profile_picture_url?: string;
   };
   return {
     followers: num(j.followers_count),
@@ -112,6 +116,7 @@ async function fetchInstagram(token: string, externalId: string | null): Promise
     likes: null,
     username: str(j.username),
     externalId: str(j.user_id) ?? externalId,
+    avatarUrl: str(j.profile_picture_url),
   };
 }
 
@@ -158,7 +163,7 @@ async function refreshTiktokToken(
 }
 
 async function fetchTiktok(token: string): Promise<StatsSample> {
-  const fields = "open_id,display_name,follower_count,following_count,likes_count,video_count";
+  const fields = "open_id,display_name,avatar_url,follower_count,following_count,likes_count,video_count";
   const res = await fetch(`${TT_USER_URL}?fields=${fields}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -177,6 +182,7 @@ async function fetchTiktok(token: string): Promise<StatsSample> {
     likes: num(u.likes_count),
     username: str(u.display_name),
     externalId: str(u.open_id),
+    avatarUrl: str(u.avatar_url),
   };
 }
 
@@ -220,8 +226,18 @@ async function syncAccount(env: SocialEnv, row: AccountRow): Promise<AccountSync
       env.DB.prepare(
         "UPDATE social_accounts SET access_token = ?, refresh_token = ?, token_expires_at = ?, " +
           "username = COALESCE(?, username), external_id = COALESCE(?, external_id), " +
-          "last_sync_at = ?, last_error = NULL, updated_at = ? WHERE account = ?",
-      ).bind(token, refresh, expiresAt, sample.username, sample.externalId, now, now, row.account),
+          "avatar_url = COALESCE(?, avatar_url), last_sync_at = ?, last_error = NULL, updated_at = ? WHERE account = ?",
+      ).bind(
+        token,
+        refresh,
+        expiresAt,
+        sample.username,
+        sample.externalId,
+        sample.avatarUrl,
+        now,
+        now,
+        row.account,
+      ),
     ]);
     return { account: row.account, ok: true };
   } catch (err) {
@@ -260,6 +276,7 @@ export interface SocialAccountHistory {
   platform: SocialPlatform;
   label: string;
   username: string | null;
+  avatarUrl: string | null;
   lastSyncAt: number | null;
   lastError: string | null;
   points: SocialPoint[];
@@ -295,6 +312,7 @@ export async function readSocialHistory(
       platform: a.platform,
       label: a.label,
       username: a.username,
+      avatarUrl: a.avatar_url,
       lastSyncAt: a.last_sync_at,
       lastError: a.last_error,
       points: byAccount.get(a.account) ?? [],
