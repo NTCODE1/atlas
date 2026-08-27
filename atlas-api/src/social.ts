@@ -163,7 +163,8 @@ async function refreshTiktokToken(
 }
 
 async function fetchTiktok(token: string): Promise<StatsSample> {
-  const fields = "open_id,display_name,avatar_url,follower_count,following_count,likes_count,video_count";
+  const fields =
+    "open_id,username,display_name,avatar_url,follower_count,following_count,likes_count,video_count";
   const res = await fetch(`${TT_USER_URL}?fields=${fields}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -180,7 +181,9 @@ async function fetchTiktok(token: string): Promise<StatsSample> {
     following: num(u.following_count),
     posts: num(u.video_count),
     likes: num(u.likes_count),
-    username: str(u.display_name),
+    // `username` is the @handle (needs user.info.profile scope); display_name
+    // is the free-text profile name — prefer the handle, fall back to the name.
+    username: str(u.username) ?? str(u.display_name),
     externalId: str(u.open_id),
     avatarUrl: str(u.avatar_url),
   };
