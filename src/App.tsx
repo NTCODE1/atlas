@@ -10,6 +10,7 @@ import Nutrition from './screens/Nutrition'
 import Journal from './screens/Journal'
 import Motivation from './screens/Motivation'
 import Finance from './screens/Finance'
+import Social from './screens/Social'
 import Settings from './screens/Settings'
 import Assistant from './screens/Assistant'
 import AssistantFab from './components/AssistantFab'
@@ -35,6 +36,8 @@ const TAB_GRADIENTS: Record<TabId, string> = {
     'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.15), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.10), transparent 52%)',
   finance:
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(154,160,171,0.09), transparent 52%)',
+  social:
+    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(199,203,212,0.09), transparent 52%)',
 }
 
 export default function App() {
@@ -90,6 +93,8 @@ export default function App() {
             <Motivation />
           ) : activeTab === 'finance' ? (
             <Finance />
+          ) : activeTab === 'social' ? (
+            <Social />
           ) : (
             <div className="flex-1 overflow-y-auto px-6" />
           )}

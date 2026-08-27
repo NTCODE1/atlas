@@ -54,6 +54,7 @@ import { handleAuthRoutes, requireSession } from "./auth.ts";
 import { buildNutritionPrompt, applyFinnishFoodOverrides } from "./finnishFoods.ts";
 import { handleFlatSyncRoute } from "./sync.ts";
 import { handleJournalSyncRoute, JOURNAL_SYNC_REGISTRY } from "./sync/journalSync.ts";
+import { connectAccount, readSocialHistory, syncAllAccounts } from "./social.ts";
 import { NUTRITION_SYNC_REGISTRY } from "./sync/nutritionSync.ts";
 import { WEIGHT_SYNC_REGISTRY } from "./sync/weightSync.ts";
 import { ENERGY_SYNC_REGISTRY } from "./sync/energySync.ts";
@@ -98,6 +99,13 @@ export interface Env {
   SESSION_SECRET: string;
   /** One-time code required to enroll a new passkey/device (see auth.ts). */
   SETUP_CODE: string;
+  /**
+   * TikTok Display API app credentials — only needed for the Social tab's
+   * TikTok accounts (Instagram needs none: its long-lived token self-refreshes).
+   * Set with `wrangler secret put`. See src/social.ts and docs/social-setup.md.
+   */
+  TIKTOK_CLIENT_KEY?: string;
+  TIKTOK_CLIENT_SECRET?: string;
 }
 
 // Claude model for all AI features. Haiku 4.5 is fast + cheap and supports
@@ -807,6 +815,44 @@ export default {
       return jsonResponse(JSON.stringify({ stored: true, date }), 201, request, env);
     }
 
+    // POST /api/social/connect — seed/replace a social account's OAuth token.
+    // Uses the WRITE key (API_SECRET), not the bundle key: this stores
+    // credentials. Run once per account during setup — see docs/social-setup.md.
+    if (method === "POST" && pathname === "/api/social/connect") {
+      if (request.headers.get("x-api-key") !== env.API_SECRET) {
+        return jsonResponse(JSON.stringify({ error: "forbidden" }), 403, request, env);
+      }
+      let body: Record<string, unknown>;
+      try {
+        body = (await request.json()) as Record<string, unknown>;
+      } catch {
+        return jsonResponse(JSON.stringify({ error: "invalid JSON body" }), 400, request, env);
+      }
+      const result = await connectAccount(env, body);
+      return jsonResponse(JSON.stringify(result), result.ok ? 200 : 400, request, env);
+    }
+
+    // POST /api/social/refresh — run the follower-stats sync right now (read/AI
+    // key + passkey). The daily cron trigger normally does this; this backs the
+    // Social tab's manual refresh button.
+    if (method === "POST" && pathname === "/api/social/refresh") {
+      if (!(await authorized(request, env))) {
+        return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
+      }
+      const result = await syncAllAccounts(env);
+      return jsonResponse(JSON.stringify(result), 200, request, env);
+    }
+
+    // GET /api/social — follower/engagement history for every connected account
+    // (read/AI key + passkey). `?days=` clamps the window (default 90, max 400).
+    if (method === "GET" && pathname === "/api/social") {
+      if (!(await authorized(request, env))) {
+        return jsonResponse(JSON.stringify({ error: "unauthorized" }), 401, request, env);
+      }
+      const days = Number(new URL(request.url).searchParams.get("days")) || 90;
+      return jsonResponse(JSON.stringify(await readSocialHistory(env, days)), 200, request, env);
+    }
+
     // POST /api/ai/nutrition — estimate calories/macros from a meal description.
     if (method === "POST" && pathname === "/api/ai/nutrition") {
       if (!(await authorized(request, env))) {
@@ -1292,5 +1338,18 @@ export default {
     }
 
     return jsonResponse(JSON.stringify({ error: "not found" }), 404, request, env);
+  },
+
+  /**
+   * Cron trigger (see wrangler.toml [triggers]). Runs the social-media
+   * follower sync once a day: pull the current follower/engagement counts for
+   * every connected account into `social_stats` (src/social.ts). Per-account
+   * failures are already isolated inside syncAllAccounts; the outer catch is
+   * just a backstop so a thrown error is logged rather than lost.
+   */
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      syncAllAccounts(env).catch((err) => console.error("[scheduled] social sync failed:", String(err))),
+    );
   },
 };

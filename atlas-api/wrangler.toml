@@ -6,8 +6,9 @@ compatibility_date = "2026-06-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Non-secret config. Secrets (API_SECRET, ATLAS_API_KEY, ANTHROPIC_API_KEY,
-# SESSION_SECRET, SETUP_CODE) are set with `wrangler secret put` and must NOT
-# live here.
+# SESSION_SECRET, SETUP_CODE, and — for the Social tab's TikTok accounts —
+# TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET) are set with `wrangler secret put`
+# and must NOT live here.
 #   SESSION_SECRET — random 32+ char string; HMAC key for passkey session tokens.
 #   SETUP_CODE     — one-time code you type once per device to enroll a passkey.
 # The passkey Relying Party ID/origin is derived from the request Origin and
@@ -34,3 +35,11 @@ binding = "DB"
 database_name = "atlas-db"
 database_id = "74ac927c-d0ab-469b-9dbe-8bd62672b63f"
 migrations_dir = "migrations"
+
+# Cron: daily social-media follower sync (see the `scheduled` handler in
+# src/index.ts + src/social.ts). 05:20 UTC daily. Cloudflare cron triggers are
+# free on the Workers free plan. Test a run without waiting a day with:
+#   npx wrangler dev --test-scheduled   then  curl "http://localhost:8787/__scheduled"
+# or just hit POST /api/social/refresh from the app.
+[triggers]
+crons = ["20 5 * * *"]

@@ -23,6 +23,9 @@ whichever one a given entry was logged on.
 | `POST` | `/api/calendar-parse` | Extracts calendar events/tasks from `{ "text": "...", "today": "YYYY-MM-DD" }` (`today` = client local date, for weekday resolution). Requires `x-api-key: <ATLAS_API_KEY>`. Rate-limited → `429`. Returns a JSON array `[{ "title", "date", "time", "type": "event"\|"task" }]`. Proxies Anthropic Claude. |
 | `POST` | `/api/nutrition-gap` | Largest intake-vs-target gaps from `{ "nutrition": { ...today's totals/targets/micros... } }` (assembled client-side). Requires `x-api-key: <ATLAS_API_KEY>`. Rate-limited → `429`. Returns `{ "gaps": [{ "nutrient", "amountShort", "foodSuggestions": [] }] }`. Proxies Anthropic Claude. |
 | `POST` | `/api/update-targets` | Goal-based macro coaching from `{ "goal": "lose fat", "weightKg", "bmi", "bodyFatPercentage", "leanBodyMassKg" }` (body metrics optional). Requires `x-api-key: <ATLAS_API_KEY>`. Rate-limited → `429`. Returns `{ "calorieTarget", "protein", "carbs", "fat", "reasoning", "tips": [] }`. Proxies Anthropic Claude. |
+| `POST` | `/api/social/connect` | Seed/replace one social account's OAuth token (`{ account, platform, label, accessToken, refreshToken?, expiresInSeconds?, sortOrder? }`). Requires header `x-api-key: <API_SECRET>` (the **write** key — it stores credentials). Run once per account during setup — see [`docs/social-setup.md`](docs/social-setup.md). |
+| `POST` | `/api/social/refresh` | Run the social follower-stats sync now (what the daily cron does). Requires `x-api-key: <ATLAS_API_KEY>` + passkey. Returns `{ synced, failed, results }`. |
+| `GET`  | `/api/social`       | Follower/engagement history per connected account. `?days=` clamps the window (default 90, max 400). Requires `x-api-key: <ATLAS_API_KEY>` + passkey. Returns `{ accounts: [{ account, platform, label, username, lastSyncAt, lastError, points: [{ date, followers, following, posts, likes }] }] }`. |
 
 ### Keys & security
 
@@ -35,6 +38,10 @@ the low-privilege `ATLAS_API_KEY`:
 - `ANTHROPIC_API_KEY` — Anthropic (Claude) key. Server secret only; never leaves the Worker.
 - `SESSION_SECRET` — HMAC key for signing passkey session tokens. Server secret only.
 - `SETUP_CODE` — one-time code typed once per device to enroll a passkey.
+- `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` — TikTok Display API app credentials,
+  used by the daily social sync to refresh the (24h) TikTok access token. Only
+  needed if a TikTok account is connected on the Social tab. Instagram needs no
+  secret here — its long-lived token self-refreshes. See `docs/social-setup.md`.
 
 **Passkey (WebAuthn) gate.** On top of `ATLAS_API_KEY`, all read + AI routes require a
 short-lived session token that the PWA obtains by proving a device passkey (Face ID /
@@ -105,6 +112,13 @@ Two stores, split by what they hold:
   snapshot rollup. `assistant_messages` (chat history) has a table in the
   schema but is the one domain deliberately left unsynced — lowest value of
   everything tracked, not worth the round-trip.
+- **Social** (`social_accounts`, `social_stats` — migration `0002_social.sql`,
+  code in `src/social.ts`) is server-owned and **cron-driven**, not a synced
+  domain: a daily [cron trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+  (`wrangler.toml [triggers]`, `05:20 UTC`) pulls follower counts from the
+  Instagram Graph API and TikTok Display API into one row per account per day.
+  The PWA only reads it (`GET /api/social`). One-time OAuth setup per account:
+  [`docs/social-setup.md`](docs/social-setup.md).
 
 **Sync model** (`src/sync.ts`, `src/sync/*.ts`): each synced domain corresponds
 to one browser localStorage key on the frontend (`src/hooks/useSyncedStorage.ts`

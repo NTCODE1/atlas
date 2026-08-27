@@ -1,4 +1,4 @@
-import { BookOpen, Dumbbell, Home, Moon, Sparkles, Utensils, Wallet, Zap } from 'lucide-react'
+import { AtSign, BookOpen, Dumbbell, Home, Moon, Sparkles, Utensils, Wallet, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -11,6 +11,7 @@ export type TabId =
   | 'journal'
   | 'motivation'
   | 'finance'
+  | 'social'
 
 const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: 'home', label: 'Home', icon: Home },
@@ -21,6 +22,7 @@ const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: 'journal', label: 'Journal', icon: BookOpen },
   { id: 'motivation', label: 'Motivation', icon: Sparkles },
   { id: 'finance', label: 'Finance', icon: Wallet },
+  { id: 'social', label: 'Social', icon: AtSign },
 ]
 
 interface TabBarProps {
@@ -36,7 +38,7 @@ interface PillRect {
 }
 
 /**
- * Floating iOS "liquid glass" bottom nav with 8 destinations. Icon-only and
+ * Floating iOS "liquid glass" bottom nav with 9 destinations. Icon-only and
  * fully capsule-shaped (both the outer bar and the active-tab highlight use
  * rounded-full), matching Apple's actual Liquid Glass tab bar silhouette
  * rather than a rounded rectangle with labels. A single glass pill glides
@@ -60,7 +62,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
     return () => window.removeEventListener('resize', measure)
   }, [active])
 
-  // With 8 tabs the bar scrolls; keep the active one in view.
+  // With 9 tabs the bar scrolls; keep the active one in view.
   useEffect(() => {
     btnRefs.current.get(active)?.scrollIntoView({ inline: 'center', block: 'nearest' })
   }, [active])
