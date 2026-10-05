@@ -17,7 +17,7 @@ interface GoalBarProps {
 
 const BADGE_CLASS: Record<GoalStatus, string> = {
   completed: 'bg-accent/15 text-accent',
-  'deadline-soon': 'bg-[#ffb155]/15 text-[#ffb155]',
+  'deadline-soon': 'bg-rose/15 text-rose',
   'in-progress': 'bg-fill text-text-muted',
 }
 

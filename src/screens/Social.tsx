@@ -58,7 +58,7 @@ function DeltaBadge({ label, value }: { label: string; value: number | null }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-        up ? 'bg-green-400/10 text-green-400' : 'bg-rose/10 text-rose'
+        up ? 'bg-fill text-text' : 'bg-fill text-text-muted'
       }`}
     >
       <Icon size={12} strokeWidth={2.5} />

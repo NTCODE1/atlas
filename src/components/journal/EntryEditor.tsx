@@ -136,16 +136,16 @@ export default function EntryEditor({
         aria-pressed={important}
         className={`press mt-3 flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors ${
           important
-            ? 'border-[#ffb155]/40 bg-[#ffb155]/10'
+            ? 'border-rose/40 bg-rose/10'
             : 'border-border bg-fill'
         }`}
       >
         <Star
           size={17}
           strokeWidth={2}
-          className={important ? 'fill-[#ffb155] text-[#ffb155]' : 'text-text-muted'}
+          className={important ? 'fill-rose text-rose' : 'text-text-muted'}
         />
-        <span className={`text-sm font-medium ${important ? 'text-[#ffb155]' : 'text-text-muted'}`}>
+        <span className={`text-sm font-medium ${important ? 'text-rose' : 'text-text-muted'}`}>
           Important
         </span>
         <span className="ml-auto text-xs text-text-muted">

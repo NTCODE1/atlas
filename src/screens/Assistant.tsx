@@ -380,12 +380,12 @@ export default function Assistant({ onClose }: AssistantProps) {
             className="max-h-32 flex-1 resize-none self-center bg-transparent py-1.5 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
           />
           {speech.listening ? (
-            // Recording: tap to stop. Pulsing red so it's clearly live.
+            // Recording: tap to stop. Pulsing bright so it's clearly live.
             <button
               type="button"
               onClick={toggleMic}
               aria-label="Stop voice input"
-              className="press grid h-9 w-9 shrink-0 animate-pulse place-items-center rounded-full bg-red-500 text-white"
+              className="press grid h-9 w-9 shrink-0 animate-pulse place-items-center rounded-full bg-rose text-bg"
             >
               <Mic size={20} strokeWidth={2} />
             </button>

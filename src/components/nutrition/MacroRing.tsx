@@ -14,10 +14,12 @@ const STROKE = 9
 const RADIUS = (SIZE - STROKE) / 2
 const CIRC = 2 * Math.PI * RADIUS
 
+// Monochrome ramp — each macro gets a different brightness rather than a hue
+// so the three rings stay distinguishable at a glance (labels confirm which).
 const COLORS: Record<MacroColor, { stroke: string; glow: string }> = {
-  mint: { stroke: '#34f5c5', glow: 'rgba(52,245,197,0.5)' },
-  amber: { stroke: '#ffb155', glow: 'rgba(255,177,85,0.5)' },
-  indigo: { stroke: '#8a93ff', glow: 'rgba(138,147,255,0.5)' },
+  mint: { stroke: 'var(--color-accent-bright)', glow: 'rgba(255,255,255,0.45)' },
+  amber: { stroke: 'var(--color-sky)', glow: 'rgba(255,255,255,0.25)' },
+  indigo: { stroke: 'var(--color-cyan)', glow: 'rgba(255,255,255,0.15)' },
 }
 
 /** Compact macro donut: grams in the centre, label + target beneath. */

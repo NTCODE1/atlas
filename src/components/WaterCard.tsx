@@ -51,7 +51,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
         className="absolute inset-x-0 bottom-0 transition-[height] duration-1000 ease-out"
         style={{
           height: `${level}%`,
-          background: 'linear-gradient(180deg,#2e6bff,#0a2472 70%,#04044a)',
+          background: 'linear-gradient(180deg,#5a5f68,#1c1e24 70%,#060709)',
         }}
       >
         <svg
@@ -60,7 +60,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
           preserveAspectRatio="none"
           aria-hidden
         >
-          <path d={WAVE_PATH} fill="#5b82ff" opacity={0.45} />
+          <path d={WAVE_PATH} fill="#9aa0ab" opacity={0.45} />
         </svg>
         <svg
           className="water-wave absolute -top-3 left-0 h-5 w-[200%]"
@@ -68,7 +68,7 @@ export default function WaterCard({ compact = false }: WaterCardProps) {
           preserveAspectRatio="none"
           aria-hidden
         >
-          <path d={WAVE_PATH} fill="#3b82f6" opacity={0.9} />
+          <path d={WAVE_PATH} fill="#e3e5e9" opacity={0.9} />
         </svg>
       </div>
 

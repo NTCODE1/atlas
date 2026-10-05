@@ -20,8 +20,8 @@ const CIRC = 2 * Math.PI * R
  * Floating glassy button, fixed bottom-right on every screen, that opens the
  * Assistant. A tap opens it; **holding for 3 seconds hides it** — a progress
  * ring fills and the button gently shrinks while held, then fades out. It's
- * turned back on from Settings. Blue-white gradient is a deliberate mono
- * exception. Sits above the bottom nav, below the full-screen overlays.
+ * turned back on from Settings. Sits above the bottom nav, below the
+ * full-screen overlays.
  */
 export default function AssistantFab({ onClick, onHide }: AssistantFabProps) {
   const [progress, setProgress] = useState(0) // 0..1 while holding
@@ -84,8 +84,8 @@ export default function AssistantFab({ onClick, onHide }: AssistantFabProps) {
       className="absolute right-4 z-30 grid h-14 w-14 touch-none select-none place-items-center rounded-full border border-white/20 text-white backdrop-blur-xl"
       style={{
         bottom: 'calc(env(safe-area-inset-bottom) + 104px)',
-        background: 'linear-gradient(160deg, rgba(120,170,255,0.38), rgba(255,255,255,0.12))',
-        boxShadow: '0 8px 24px rgba(10,30,90,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08))',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
         transform: `scale(${scale})`,
         opacity: leaving ? 0 : 1,
         transition: leaving

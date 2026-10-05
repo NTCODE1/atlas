@@ -65,7 +65,7 @@ export default function EntryList({ items, year, monthIndex, onPick, onAdd }: En
                         <Star
                           size={13}
                           strokeWidth={2}
-                          className="shrink-0 fill-[#ffb155] text-[#ffb155]"
+                          className="shrink-0 fill-rose text-rose"
                         />
                       )}
                       {formatEntryDate(year, monthIndex, day)}

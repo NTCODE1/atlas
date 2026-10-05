@@ -2,9 +2,12 @@
 
 /* ---------------------------------------------------------------------------
    Apex design system
-   Monochrome, premium. Near-black canvas, barely-lighter card surfaces with
-   hairline borders, white/grey accents. Colour is reserved for meaning:
-   water blue, macro rings, meal-search rainbow, amber importance, rose alerts.
+   Strict monochrome, premium. Near-black canvas, barely-lighter card surfaces
+   with hairline borders, white/grey accents only — no hue anywhere in the
+   app, including alerts/emphasis. Those are communicated with brightness and
+   icons instead: --color-rose is the "needs attention" shade (always paired
+   with an icon — Star, destructive X, etc.) and resolves to the brightest/
+   darkest value in the ramp per theme, not a separate hue.
    Light theme = the :root[data-theme='light'] override block below.
 --------------------------------------------------------------------------- */
 @theme {
@@ -32,8 +35,10 @@
   --color-navy: #14161c;
   /* Sleep identity — light grey in the mono ramp. */
   --color-indigo: #d3d6dd;
-  /* Semantic alert/destructive — deliberately kept coloured. */
-  --color-rose: #ff6b81;
+  /* "Needs attention" shade (destructive, important, live/recording) — the
+     brightest value in the ramp, not a separate hue. Always paired with an
+     icon in context since brightness alone is a weak signal. */
+  --color-rose: var(--color-accent-bright);
 
   /* Glass panels */
   --color-glass: rgba(20, 22, 30, 0.55);
@@ -67,6 +72,7 @@
   --color-royal: #c7cbd4;
   --color-navy: #e4e6eb;
   --color-indigo: #3a3f4a;
+  --color-rose: var(--color-accent-bright);
   --color-glass: rgba(255, 255, 255, 0.55);
   --color-glass-strong: rgba(255, 255, 255, 0.72);
 }

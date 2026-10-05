@@ -10,7 +10,7 @@ interface MealTrackerProps {
 }
 
 const GRADIENT =
-  'linear-gradient(100deg,#34f5c5,#22d3ee,#6366f1,#a855f7,#ec4899,#ff6b81)'
+  'linear-gradient(100deg, var(--color-border-strong), var(--color-text-muted), var(--color-accent-bright), var(--color-text-muted), var(--color-border-strong))'
 
 /** "Track your meal" card: gradient-glow input + meal-type pills. */
 export default function MealTracker({ onLog }: MealTrackerProps) {

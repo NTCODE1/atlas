@@ -112,7 +112,7 @@ export default function DaySchedule({
                 </button>
 
                 {entry.important && (
-                  <Star size={15} strokeWidth={2} className="shrink-0 fill-[#ffb155] text-[#ffb155]" />
+                  <Star size={15} strokeWidth={2} className="shrink-0 fill-rose text-rose" />
                 )}
               </li>
             )

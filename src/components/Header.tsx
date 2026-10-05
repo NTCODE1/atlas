@@ -28,12 +28,12 @@ export default function Header({ onOpenSettings }: HeaderProps) {
     <header className="flex items-center justify-between px-6 py-4">
       <div className="flex items-center gap-2">
         <ApexWordmark className="h-[18px] w-auto text-text" />
-        {/* Sync indicator: green when data is live from the API, grey on fallback. */}
+        {/* Sync indicator: bright when data is live from the API, dim on fallback. */}
         <span
           title={isLive ? 'Live data' : 'Using saved data'}
           aria-label={isLive ? 'Live data' : 'Using saved data'}
           className={`h-1.5 w-1.5 rounded-full transition-colors ${
-            isLive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]' : 'bg-text-muted/50'
+            isLive ? 'bg-text' : 'bg-text-muted/50'
           }`}
         />
       </div>

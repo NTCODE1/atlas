@@ -163,7 +163,7 @@ function EntryChip({ entry, onClick }: { entry: DayEntryV2; onClick: () => void 
       className="glass-subtle press flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left"
     >
       {entry.important && (
-        <Star size={13} strokeWidth={2} className="mt-0.5 shrink-0 fill-[#ffb155] text-[#ffb155]" />
+        <Star size={13} strokeWidth={2} className="mt-0.5 shrink-0 fill-rose text-rose" />
       )}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-text">{entry.text}</span>

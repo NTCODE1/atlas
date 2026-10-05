@@ -58,7 +58,7 @@ export default function DayCell({ cell, record, selected, onPick, filterTag }: D
           <span key={e.id} className="flex w-full min-w-0 items-center gap-1">
             <span
               className="h-1 w-1 shrink-0 rounded-full"
-              style={{ backgroundColor: e.important ? '#ffb155' : tagColor(e.tag) }}
+              style={{ backgroundColor: e.important ? 'var(--color-rose)' : tagColor(e.tag) }}
             />
             <span className="truncate text-[9px] leading-tight text-text-muted">{e.text}</span>
           </span>

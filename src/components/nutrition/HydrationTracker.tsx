@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Droplet, Plus, X } from 'lucide-react'
 import { useHydration, useHydrationGoal, DRINK_PRESETS } from '../../hooks/useHydration'
 
-/** Water-blue accent (an allowed colour exception, like the macro rings). */
-const WATER_GRADIENT = 'linear-gradient(90deg,#22d3ee,#3b82f6)'
+/** Monochrome fill gradient — bright-to-dim grey, no hue. */
+const WATER_GRADIENT = 'linear-gradient(90deg, var(--color-accent-bright), var(--color-sky))'
 
 /** "HH:MM" local time from an ISO timestamp. */
 function clockTime(iso: string): string {
@@ -32,7 +32,7 @@ export default function HydrationTracker() {
     <div className="glass mt-4 rounded-3xl px-5 py-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Droplet size={18} className="text-cyan" strokeWidth={2} style={{ color: '#22d3ee' }} />
+          <Droplet size={18} className="text-cyan" strokeWidth={2} />
           <span className="font-display text-lg font-semibold text-text">Hydration</span>
         </div>
         <span className="text-sm text-text-muted">
@@ -44,7 +44,7 @@ export default function HydrationTracker() {
       <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-fill-2">
         <div
           className="h-full rounded-full transition-[width] duration-500"
-          style={{ width: `${percent}%`, background: WATER_GRADIENT, boxShadow: '0 0 8px rgba(34,211,238,0.45)' }}
+          style={{ width: `${percent}%`, background: WATER_GRADIENT, boxShadow: '0 0 8px rgba(255,255,255,0.35)' }}
         />
       </div>
       <span className="mt-2 block text-sm text-text-muted">
@@ -94,7 +94,7 @@ export default function HydrationTracker() {
               key={d.id}
               className={`flex items-center gap-3 py-2.5 ${i > 0 ? 'border-t border-border' : ''}`}
             >
-              <Droplet size={15} strokeWidth={2} style={{ color: '#22d3ee' }} className="shrink-0" />
+              <Droplet size={15} strokeWidth={2} className="shrink-0 text-cyan" />
               <span className="min-w-0 flex-1 truncate text-sm text-text">{d.label}</span>
               <span className="shrink-0 text-xs text-text-muted">{clockTime(d.createdAt)}</span>
               <span className="shrink-0 text-sm font-medium text-text">{d.ml} ml</span>

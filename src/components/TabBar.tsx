@@ -106,7 +106,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                     isActive ? 'text-accent' : 'text-text-muted hover:text-text'
                   }`}
                 >
-                  <Icon size={22} strokeWidth={isActive ? 2.25 : 1.75} />
+                  <Icon size={21} strokeWidth={isActive ? 1.9 : 1.6} />
                 </button>
               </li>
             )
