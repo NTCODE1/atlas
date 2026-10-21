@@ -81,11 +81,9 @@ export default function AssistantFab({ onClick, onHide }: AssistantFabProps) {
       onPointerCancel={cancelHold}
       onContextMenu={(e) => e.preventDefault()}
       aria-label="Open assistant. Hold for 3 seconds to hide it."
-      className="absolute right-4 z-30 grid h-14 w-14 touch-none select-none place-items-center rounded-full border border-white/20 text-white backdrop-blur-xl"
+      className="tabbar-glass liquid-rim absolute right-4 z-30 grid h-14 w-14 touch-none select-none place-items-center rounded-full text-white"
       style={{
         bottom: 'calc(env(safe-area-inset-bottom) + 104px)',
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08))',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
         transform: `scale(${scale})`,
         opacity: leaving ? 0 : 1,
         transition: leaving

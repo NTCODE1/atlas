@@ -15,7 +15,7 @@ export default function ReadinessRing({ score, label, loading }: ReadinessRingPr
   const count = useCountUp(loading ? 0 : score, 1200)
   return (
     <div className="mx-auto w-[200px]">
-      <Ring progress={score / 100} size={200} stroke={13} loading={loading}>
+      <Ring progress={score / 100} size={200} stroke={13} loading={loading} glow>
         <span className="num-glow text-[64px] font-semibold leading-none tracking-tight text-text tabular-nums">
           {loading ? '–' : count}
         </span>

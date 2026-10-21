@@ -57,7 +57,7 @@ export default function App() {
         <Header onOpenSettings={() => setSettingsOpen(true)} />
 
         {/* Screen region — keyed remount so each tab springs in. */}
-        <div key={screen} className="screen-enter flex min-h-0 flex-1 flex-col">
+        <div key={screen} className="screen-enter fade-top flex min-h-0 flex-1 flex-col">
           {/* Sub-screens under More get a back link to the list. */}
           {isMoreScreen(screen) && (
             <button

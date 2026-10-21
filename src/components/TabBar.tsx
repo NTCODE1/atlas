@@ -31,8 +31,8 @@ interface PillRect {
  * fully capsule-shaped (both the outer bar and the active-tab highlight use
  * rounded-full), matching Apple's actual Liquid Glass tab bar silhouette
  * rather than a rounded rectangle with labels. A single glass pill glides
- * behind the active tab with a spring — since each tab is a fixed square, the
- * pill reads as a glowing glass "blob" that slides between icons.
+ * behind the active tab with a spring — a short glass capsule (each tab is a
+ * fixed 56×44 hit area) that lenses the icon under it, as in iOS 26.
  */
 export default function TabBar({ active, onChange }: TabBarProps) {
   const listRef = useRef<HTMLUListElement>(null)
@@ -56,7 +56,9 @@ export default function TabBar({ active, onChange }: TabBarProps) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-40"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="tabbar-glass pointer-events-auto relative mx-3 mb-3 overflow-hidden rounded-full">
+      {/* iOS-style scrim: content dims as it scrolls down under the glass. */}
+      <div aria-hidden className="nav-scrim pointer-events-none absolute inset-x-0 bottom-0 h-28" />
+      <div className="tabbar-glass liquid-rim pointer-events-auto relative mx-3 mb-3 overflow-hidden rounded-full">
         <ul ref={listRef} className="relative flex items-center px-2 py-2">
           {/* Gliding liquid-glass pill behind the active tab. z-0 keeps it under
               the buttons (which are relative z-10). Kept a direct child of <ul>
@@ -87,12 +89,15 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={label}
                   title={label}
-                  className={`press relative z-10 flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-300 ${
-                    // Active icon goes dark on the light indicator disc.
-                    isActive ? 'text-bg' : 'text-text-muted hover:text-text'
+                  className={`press relative z-10 flex h-11 w-14 items-center justify-center rounded-full transition-colors duration-300 ${
+                    isActive ? 'text-accent-bright' : 'text-text-muted hover:text-text'
                   }`}
                 >
-                  <Icon size={21} strokeWidth={isActive ? 1.9 : 1.6} />
+                  <Icon
+                    size={21}
+                    strokeWidth={isActive ? 2 : 1.6}
+                    className={isActive ? 'drop-shadow-[0_0_6px_rgba(255,255,255,0.55)]' : ''}
+                  />
                 </button>
               </li>
             )

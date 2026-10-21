@@ -183,39 +183,116 @@ h2 {
   }
 }
 
-/* Tap feedback: a clean, quick scale — no bounce, no flash. */
+/* Tap feedback: presses in fast, springs back on release (the iOS feel). */
 .press {
-  transition: transform 0.2s var(--ease-out-soft);
+  transition: transform 0.42s var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
 }
 .press:active {
-  transform: scale(0.96);
+  transform: scale(0.955);
+  transition-duration: 0.12s;
+  transition-timing-function: var(--ease-out-soft);
 }
 
-/* Floating capsule tab bar — dark smoked glass with a hairline top light. */
+/* Content fades out under the header instead of hard-clipping at its edge. */
+.fade-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+}
+
+/* ---------------------------------------------------------------------------
+   Liquid glass (iOS 26 style) — the nav bar, its active-tab lens and the AI
+   button. Clear rather than smoked: heavy blur + saturation so whatever
+   scrolls beneath shows through, a specular sheen pooled at the top, and a
+   light rim (.liquid-rim) that's brightest top-left and fades round the edge.
+--------------------------------------------------------------------------- */
 .tabbar-glass {
-  background-color: rgba(22, 23, 26, 0.78);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  backdrop-filter: blur(24px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background-color: rgba(30, 31, 35, 0.42);
+  background-image:
+    radial-gradient(120% 140% at 30% -40%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01) 55%, rgba(255, 255, 255, 0.04));
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
+  backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 30px rgba(0, 0, 0, 0.55);
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
+    inset 0 0 18px rgba(255, 255, 255, 0.04),
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
-/* Active-tab indicator: a solid light disc (the active icon turns dark on it),
-   gliding between tabs with a spring. Position/size are set inline. */
+/* Gradient rim: a 1px ring drawn with a masked pseudo-element so the edge
+   can fade (bright top-left → faint → bright-ish bottom-right) like light
+   catching curved glass. Needs `position: relative` on the element. */
+.liquid-rim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45),
+    rgba(255, 255, 255, 0.08) 35%,
+    rgba(255, 255, 255, 0.04) 60%,
+    rgba(255, 255, 255, 0.22)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Active-tab lens: a brighter glass capsule that magnifies/lights the icon
+   under it, gliding between tabs with a spring. Position/size set inline. */
 .tab-pill {
   border-radius: 9999px;
-  background-image: linear-gradient(180deg, #ffffff 0%, #d9dade 100%);
+  background-color: rgba(255, 255, 255, 0.1);
+  background-image:
+    radial-gradient(100% 120% at 35% 0%, rgba(255, 255, 255, 0.28), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  -webkit-backdrop-filter: brightness(1.35) saturate(1.5);
+  backdrop-filter: brightness(1.35) saturate(1.5);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 0 18px rgba(255, 255, 255, 0.22),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+    inset 0 1px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.18),
+    0 0 20px rgba(255, 255, 255, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.35);
   transition:
-    transform 0.5s var(--ease-spring),
-    width 0.5s var(--ease-spring),
-    height 0.5s var(--ease-spring);
+    transform 0.55s var(--ease-spring),
+    width 0.55s var(--ease-spring),
+    height 0.55s var(--ease-spring);
+}
+
+/* Bottom scrim behind the nav — content dims into black as it slides under. */
+.nav-scrim {
+  background: linear-gradient(180deg, transparent, rgba(5, 5, 6, 0.55) 55%, rgba(5, 5, 6, 0.85));
+}
+
+/* Readiness ring hero treatment (Ring `glow` prop). */
+.ring-halo {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.04) 38%, transparent 66%);
+  filter: blur(6px);
+}
+.ring-arc-strong {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35))
+    drop-shadow(0 0 34px rgba(255, 255, 255, 0.18));
+}
+@keyframes ring-tip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ring-tip {
+  filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+  animation: ring-tip-in 0.5s ease-out 1.05s both;
 }
 
 /* Screen enter: a soft, simple fade + rise when switching tabs. */
@@ -281,6 +358,9 @@ h2 {
   }
   .tab-pill {
     transition: none;
+  }
+  .ring-tip {
+    animation: none;
   }
   .screen-enter,
   .sheet-enter,
