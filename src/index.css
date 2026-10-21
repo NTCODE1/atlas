@@ -46,6 +46,8 @@
   /* Motion */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  /* The curve iOS uses for sheets and pushes — fast start, long soft landing. */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* Type — Apple's SF Pro on iPhone/Mac (what the mockup is drawn in: SF
      Display at large sizes, SF Text small, chosen automatically by the
@@ -78,6 +80,12 @@ body,
 
 html {
   color-scheme: dark;
+}
+
+/* No rubber-banding of the whole app shell — only the screens scroll. */
+html,
+body {
+  overscroll-behavior: none;
 }
 
 body {
@@ -310,19 +318,91 @@ h2 {
   animation: screen-in 0.4s var(--ease-out-soft) both;
 }
 
-/* Bottom sheet: a gentle short rise + fade (not a full-height slide). */
-@keyframes sheet-up {
+/* Main screens slide in from the side you're navigating towards. */
+@keyframes screen-in-right {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateX(28px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
+@keyframes screen-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.screen-enter-right {
+  animation: screen-in-right 0.5s var(--ease-ios) both;
+}
+.screen-enter-left {
+  animation: screen-in-left 0.5s var(--ease-ios) both;
+}
+
+/* Cards rise in one after another as a screen opens: targets the direct
+   children of each screen's scroll container. Capped at 8 steps so long
+   screens don't make you wait. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.stagger > .overflow-y-auto > * {
+  animation: rise-in 0.55s var(--ease-ios) both;
+}
+.stagger > .overflow-y-auto > :nth-child(2) { animation-delay: 40ms; }
+.stagger > .overflow-y-auto > :nth-child(3) { animation-delay: 80ms; }
+.stagger > .overflow-y-auto > :nth-child(4) { animation-delay: 120ms; }
+.stagger > .overflow-y-auto > :nth-child(5) { animation-delay: 160ms; }
+.stagger > .overflow-y-auto > :nth-child(6) { animation-delay: 200ms; }
+.stagger > .overflow-y-auto > :nth-child(7) { animation-delay: 240ms; }
+.stagger > .overflow-y-auto > :nth-child(n + 8) { animation-delay: 280ms; }
+
+/* Bottom sheet: slides fully up on the iOS sheet curve; .sheet-leave plays it
+   back down (Sheet.tsx waits for it before unmounting). */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+/* `backwards`, not `both`: once landed the animation lets go of transform,
+   so Sheet.tsx's inline drag transform can take over. */
 .sheet-enter {
-  animation: sheet-up 0.32s var(--ease-out-soft) both;
+  animation: sheet-up 0.5s var(--ease-ios) backwards;
+}
+.sheet-leave {
+  transform: translateY(100%) !important;
+  transition: transform 0.3s var(--ease-ios);
+}
+.backdrop-leave {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Glass sheet panel: the liquid-glass recipe, denser so text stays crisp. */
+.sheet-glass {
+  background-color: rgba(24, 25, 29, 0.72);
+  background-image: radial-gradient(120% 40% at 50% -6%, rgba(255, 255, 255, 0.1), transparent 60%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  backdrop-filter: blur(36px) saturate(180%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    0 -12px 40px rgba(0, 0, 0, 0.5);
 }
 @keyframes backdrop-fade {
   from {
@@ -363,6 +443,9 @@ h2 {
     animation: none;
   }
   .screen-enter,
+  .screen-enter-right,
+  .screen-enter-left,
+  .stagger > .overflow-y-auto > *,
   .sheet-enter,
   .backdrop-enter,
   .panel-enter-right {

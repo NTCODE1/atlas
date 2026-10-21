@@ -35,8 +35,20 @@ const MORE_SCREENS: Record<MoreScreenId, true> = {
 
 const isMoreScreen = (id: ScreenId): id is MoreScreenId => id in MORE_SCREENS
 
+/** Left-to-right order for transition direction: the five tabs in nav order,
+ *  then More's sub-screens one level "deeper" (to the right of More). */
+const TAB_ORDER: TabId[] = ['today', 'train', 'food', 'plan', 'more']
+const screenRank = (id: ScreenId): number => (isMoreScreen(id) ? TAB_ORDER.length : TAB_ORDER.indexOf(id))
+
 export default function App() {
-  const [screen, setScreen] = useState<ScreenId>('today')
+  const [{ screen, dir }, setNav] = useState<{ screen: ScreenId; dir: 'left' | 'right' }>({
+    screen: 'today',
+    dir: 'right',
+  })
+  // Every navigation goes through here so the new screen slides in from the
+  // side you're moving towards (iOS push/pop feel).
+  const setScreen = (next: ScreenId) =>
+    setNav((cur) => ({ screen: next, dir: screenRank(next) >= screenRank(cur.screen) ? 'right' : 'left' }))
   // More's sub-screens keep the More tab highlighted.
   const activeTab: TabId = isMoreScreen(screen) ? 'more' : screen
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -56,8 +68,11 @@ export default function App() {
       >
         <Header onOpenSettings={() => setSettingsOpen(true)} />
 
-        {/* Screen region — keyed remount so each tab springs in. */}
-        <div key={screen} className="screen-enter fade-top flex min-h-0 flex-1 flex-col">
+        {/* Screen region — keyed remount so each screen slides in, its cards staggering up. */}
+        <div
+          key={screen}
+          className={`${dir === 'right' ? 'screen-enter-right' : 'screen-enter-left'} stagger fade-top flex min-h-0 flex-1 flex-col`}
+        >
           {/* Sub-screens under More get a back link to the list. */}
           {isMoreScreen(screen) && (
             <button
