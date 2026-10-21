@@ -88,7 +88,8 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                   aria-label={label}
                   title={label}
                   className={`press relative z-10 flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-300 ${
-                    isActive ? 'text-accent' : 'text-text-muted hover:text-text'
+                    // Active icon goes dark on the light indicator disc.
+                    isActive ? 'text-bg' : 'text-text-muted hover:text-text'
                   }`}
                 >
                   <Icon size={21} strokeWidth={isActive ? 1.9 : 1.6} />

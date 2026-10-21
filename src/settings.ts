@@ -11,13 +11,15 @@ export interface Settings {
   age: number | null
   heightCm: number | null
   weightUnit: WeightUnit
-  /** Manual theme choice — no system-preference auto-switching. */
+  /** Unused since the redesign went dark-only; kept so already-synced settings still parse. */
   theme: Theme
   /** Sleep score (0–100) below which a "low sleep" notification fires. */
   sleepAlertThreshold: number
   waterGoalL: number
   /** Daily deep-work goal, in minutes. */
   deepWorkGoalMinutes: number
+  /** Training sessions per week the Train hero counts toward (gym + watch workouts). */
+  weeklySessionTarget: number
   /** Personal healthy HRV range (ms) — readiness/sleep score HRV components
    *  score 100 inside this band, falling off outside either bound. */
   hrvRangeLowMs: number
@@ -44,6 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sleepAlertThreshold: 60,
   waterGoalL: 2.5,
   deepWorkGoalMinutes: DEFAULT_DEEP_WORK_GOAL_MINUTES,
+  weeklySessionTarget: 5,
   hrvRangeLowMs: 63,
   hrvRangeHighMs: 85,
   notificationsEnabled: false,

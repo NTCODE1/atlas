@@ -188,21 +188,6 @@ export default function Settings({ onClose }: SettingsProps) {
           </Field>
         </div>
 
-        {/* Appearance */}
-        <SectionLabel className="mt-6">APPEARANCE</SectionLabel>
-        <div className="glass-subtle mt-2 rounded-2xl p-4">
-          <Field label="Theme">
-            <SegmentedControl
-              options={[
-                { id: 'dark', label: 'Dark' },
-                { id: 'light', label: 'Light' },
-              ]}
-              value={settings.theme}
-              onChange={(theme) => patch({ theme })}
-            />
-          </Field>
-        </div>
-
         {/* Targets */}
         <SectionLabel className="mt-6">DAILY TARGETS</SectionLabel>
         <div className="glass-subtle mt-2 flex flex-col gap-3 rounded-2xl p-4">
@@ -238,6 +223,17 @@ export default function Settings({ onClose }: SettingsProps) {
               step={0.5}
               value={Math.round((settings.deepWorkGoalMinutes / 60) * 10) / 10}
               onChange={(e) => patch({ deepWorkGoalMinutes: Math.round((Number(e.target.value) || 0) * 60) })}
+              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent/60 focus:outline-none"
+            />
+          </Field>
+          <Field label="Training sessions / week">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              value={settings.weeklySessionTarget}
+              onChange={(e) => patch({ weeklySessionTarget: Math.max(1, Math.round(Number(e.target.value) || 1)) })}
               className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent/60 focus:outline-none"
             />
           </Field>

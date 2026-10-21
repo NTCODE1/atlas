@@ -4,7 +4,7 @@ interface SegmentedControlProps<T extends string> {
   onChange: (id: T) => void
 }
 
-/** iOS-style pill group: a subtle glass track with an accent pill on the active option. */
+/** iOS-style pill group: a graphite track with a lighter pill on the active option. */
 export default function SegmentedControl<T extends string>({
   options,
   value,
@@ -21,7 +21,7 @@ export default function SegmentedControl<T extends string>({
             onClick={() => onChange(id)}
             aria-pressed={active}
             className={`press flex-1 rounded-full py-1.5 text-[13px] font-semibold tracking-wide transition-colors ${
-              active ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text'
+              active ? 'bg-white/[0.12] text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' : 'text-text-muted hover:text-text'
             }`}
           >
             {label}

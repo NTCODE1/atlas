@@ -5,8 +5,14 @@ import { useWatchWorkouts } from '../api/workoutContext'
 import { useHealth } from '../api/healthContext'
 import { useSettings } from '../settingsContext'
 import { useSyncedStorage } from '../hooks/useSyncedStorage'
-import { todayISO, weeklyLoadDays, weeklyVolume, type WorkoutSession } from '../workouts'
-import { weeklyCardioStats, weeklyCardioDays } from '../api/workoutMapper'
+import { Activity, Bike, Dumbbell, Footprints, Mountain, Waves } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { sessionVolume, todayISO, weeklyLoadDays, weeklyVolume, type WorkoutSession } from '../workouts'
+import type { Workout, WorkoutType } from '../api/workoutMapper'
+import type { WeightUnit } from '../settings'
+import Card from '../components/ui/Card'
+import PageHeader from '../components/ui/PageHeader'
+import ProgressBar from '../components/ui/ProgressBar'
 import type { Vo2MaxEntry } from '../vo2max'
 import LoadBarChart from '../components/training/LoadBarChart'
 import SessionLogger from '../components/training/SessionLogger'
@@ -38,6 +44,47 @@ const findOpenSessionId = (sessions: WorkoutSession[]): string | null => {
   const open = sessions.filter((s) => s.durationMinutes === null)
   if (open.length === 0) return null
   return [...open].sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0].id
+}
+
+type SessionKind = 'gym' | WorkoutType
+
+const TYPE_META: Record<SessionKind, { label: string; icon: LucideIcon }> = {
+  gym: { label: 'Gym', icon: Dumbbell },
+  strength: { label: 'Strength', icon: Dumbbell },
+  run: { label: 'Run', icon: Footprints },
+  bike: { label: 'Bike', icon: Bike },
+  swim: { label: 'Swim', icon: Waves },
+  hike: { label: 'Hike', icon: Mountain },
+  // Watch sessions HAE can't classify — skiing and trampoline land here today.
+  other: { label: 'Other', icon: Activity },
+}
+
+/**
+ * This week's (Mon–Sun) sessions: manually logged gym sessions plus watch
+ * workouts, counted together and grouped by type for the hero's circles.
+ */
+function weekSessionSummary(sessions: WorkoutSession[], workouts: Workout[], unit: WeightUnit) {
+  const monday = new Date()
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+  const from = todayISO(monday)
+
+  const gym = sessions.filter((s) => s.date >= from && s.exercises.length > 0)
+  const watch = workouts.filter((w) => w.date >= from)
+
+  const types: { type: SessionKind; detail: string }[] = []
+  if (gym.length > 0) {
+    const kg = gym.reduce((sum, s) => sum + sessionVolume(s), 0)
+    types.push({ type: 'gym', detail: `${Math.round(unit === 'kg' ? kg : kg / 0.45359237).toLocaleString()} ${unit}` })
+  }
+  const minutesByType = new Map<WorkoutType, number>()
+  for (const w of watch) minutesByType.set(w.type, (minutesByType.get(w.type) ?? 0) + (w.durationMinutes ?? 0))
+  for (const [type, minutes] of minutesByType) {
+    const h = Math.floor(minutes / 60)
+    types.push({ type, detail: h > 0 ? `${h}h ${Math.round(minutes % 60)}m` : `${Math.round(minutes)} min` })
+  }
+
+  return { total: gym.length + watch.length, types: types.slice(0, 8) }
 }
 
 export default function Training() {
@@ -73,9 +120,8 @@ export default function Training() {
     editingSession?.date === todayISO() && editingSession?.durationMinutes === null
 
   const days = weeklyLoadDays(sessions)
+  const week = useMemo(() => weekSessionSummary(sessions, workouts, settings.weightUnit), [sessions, workouts, settings.weightUnit])
   const volume = useCountUp(Math.round(weeklyVolume(sessions, settings.weightUnit)))
-  const cardio = useMemo(() => weeklyCardioStats(workouts), [workouts])
-  const cardioDays = useMemo(() => weeklyCardioDays(workouts), [workouts])
 
   const handleStart = () => setActiveSessionId(startSession().id)
 
@@ -96,53 +142,45 @@ export default function Training() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
-      {/* Header */}
-      <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">Training</h1>
-        <p className="mt-0.5 text-text-muted">This week</p>
-      </div>
+    <div className="flex-1 overflow-y-auto px-5 pb-nav">
+      <PageHeader title="Training" subtitle="This week" />
 
-      {/* Weekly load hero — driven by real logged volume */}
-      <div className="card-grad-glass mt-4 rounded-[28px] px-5 py-5">
-        <span className="text-[11px] font-medium tracking-wider text-text-muted">WEEKLY VOLUME</span>
-        <div className="mt-1 flex items-baseline gap-1">
-          <span className="num-glow font-display text-[56px] font-bold leading-none text-text">
-            {volume.toLocaleString()}
+      {/* Sessions-this-week hero: count vs target, one circle per session type */}
+      <Card variant="hero" className="mt-5 px-5 pb-5 pt-5">
+        <div className="flex items-baseline gap-2">
+          <span className="num-glow text-[40px] font-semibold leading-none tracking-tight text-text tabular-nums">
+            {week.total}
           </span>
-          <span className="text-lg text-text-muted">{settings.weightUnit}</span>
+          <span className="text-base text-text-muted">/ {settings.weeklySessionTarget} sessions</span>
         </div>
-        <span className="mt-1 block font-display text-base font-semibold text-sky">
-          {sessions.length === 0 ? 'log your first workout' : `${sessions.length} sessions logged`}
+        <ProgressBar value={week.total / settings.weeklySessionTarget} className="mt-3" />
+        <span className="mt-2 block text-sm text-text-muted">
+          {volume.toLocaleString()} {settings.weightUnit} lifted this week
         </span>
+
+        {week.types.length > 0 ? (
+          <div className="mt-5 grid grid-cols-4 gap-2">
+            {week.types.map((t) => {
+              const Icon = TYPE_META[t.type].icon
+              return (
+                <div key={t.type} className="flex min-w-0 flex-col items-center">
+                  <span className="grid h-14 w-14 place-items-center rounded-full border border-white/[0.08] bg-white/[0.05] text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                    <Icon size={22} strokeWidth={1.6} />
+                  </span>
+                  <span className="mt-2 truncate text-[13px] font-medium text-text">{TYPE_META[t.type].label}</span>
+                  <span className="truncate text-[11px] text-text-muted">{t.detail}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-text-muted">No sessions yet this week.</p>
+        )}
 
         <div className="mt-5">
           <LoadBarChart days={days} />
         </div>
-      </div>
-
-      {/* Weekly cardio — the watch-import counterpart to weekly gym volume above.
-          Distance (km) is the standard running-volume unit, so it gets the same
-          bar-chart treatment as gym load, just plotting real km instead of au. */}
-      {cardio.sessions > 0 && (
-        <div className="glass-subtle mt-3 rounded-2xl px-4 py-3">
-          <div>
-            <span className="text-[11px] font-medium tracking-wider text-text-muted">
-              WEEKLY CARDIO
-            </span>
-            <span className="mt-0.5 block text-sm font-semibold text-text">
-              {cardio.sessions} {cardio.sessions === 1 ? 'session' : 'sessions'}
-              {cardio.distanceKm > 0 ? ` · ${cardio.distanceKm.toFixed(1)} km` : ''}
-              {cardio.durationMinutes > 0 ? ` · ${cardio.durationMinutes} min` : ''}
-            </span>
-          </div>
-          {cardio.distanceKm > 0 && (
-            <div className="mt-4">
-              <LoadBarChart days={cardioDays} />
-            </div>
-          )}
-        </div>
-      )}
+      </Card>
 
       {/* Log | History | Cardio | Progress */}
       <div className="mt-4">

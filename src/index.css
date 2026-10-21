@@ -1,80 +1,61 @@
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Apex design system
-   Strict monochrome, premium. Near-black canvas, barely-lighter card surfaces
-   with hairline borders, white/grey accents only — no hue anywhere in the
-   app, including alerts/emphasis. Those are communicated with brightness and
-   icons instead: --color-rose is the "needs attention" shade (always paired
-   with an icon — Star, destructive X, etc.) and resolves to the brightest/
-   darkest value in the ramp per theme, not a separate hue.
-   Light theme = the :root[data-theme='light'] override block below.
+   Apex design system — graphite, dark only.
+   Matte graphite cards on a near-black canvas, lit softly from the top edge;
+   white is the only accent, with one exception: --color-good (a muted green)
+   marks an on-target trend (e.g. 7-day weight heading the right way) and is
+   used for nothing else. "Needs attention" is still brightness + an icon:
+   --color-rose resolves to the brightest value in the ramp, not a hue.
+   Light mode was dropped in the redesign — every surface is tuned for dark.
 --------------------------------------------------------------------------- */
 @theme {
   /* Surfaces */
-  --color-bg: #08090c;
-  --color-surface: #15171e;
-  --color-surface-2: #1b1e27;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-bg: #0a0a0c;
+  --color-surface: #17181b;
+  --color-surface-2: #1e1f23;
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.13);
 
-  /* Translucent fills for nested tiles/tracks (theme-aware, replaces bg-white/N) */
-  --color-fill: rgba(255, 255, 255, 0.05);
+  /* Translucent fills for nested tiles/tracks */
+  --color-fill: rgba(255, 255, 255, 0.045);
   --color-fill-2: rgba(255, 255, 255, 0.09);
 
   /* Text */
-  --color-text: #f5f6f8;
-  --color-text-muted: #8a8f9a;
+  --color-text: #f4f4f5;
+  --color-text-muted: #8b8d93;
 
   /* Accents — monochrome ramp, brightest to darkest. */
-  --color-accent: #f2f3f5;
+  --color-accent: #f2f2f3;
   --color-accent-bright: #ffffff;
-  --color-sky: #c7cbd4;
-  --color-cyan: #9aa0ab;
-  --color-royal: #3a3f4a;
-  --color-navy: #14161c;
+  --color-sky: #c9cacf;
+  --color-cyan: #9c9ea5;
+  --color-royal: #3b3c42;
+  --color-navy: #141518;
   /* Sleep identity — light grey in the mono ramp. */
-  --color-indigo: #d3d6dd;
-  /* "Needs attention" shade (destructive, important, live/recording) — the
-     brightest value in the ramp, not a separate hue. Always paired with an
-     icon in context since brightness alone is a weak signal. */
+  --color-indigo: #d4d5da;
+  /* "Needs attention" shade — brightest in the ramp, always paired with an icon. */
   --color-rose: var(--color-accent-bright);
+  /* The single colour exception: on-target trends only. */
+  --color-good: #5fd38d;
 
-  /* Glass panels */
-  --color-glass: rgba(20, 22, 30, 0.55);
-  --color-glass-strong: rgba(16, 18, 26, 0.7);
+  /* Glass — kept only for the nav, sheets and overlays. */
+  --color-glass: rgba(23, 24, 27, 0.92);
+  --color-glass-strong: rgba(18, 19, 22, 0.82);
 
   /* Motion */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Type */
+  /* Type — Inter throughout; "display" is the same face, used light for
+     titles and semibold for numbers (see the mockup's "Good morning, Niila"). */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Light theme — manual toggle only (Settings), applied via data-theme on <html>.
-   Same monochrome ramp, inverted: light surfaces, near-black accent. */
-:root[data-theme='light'] {
-  --color-bg: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-surface-2: #eceef2;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-border-strong: rgba(0, 0, 0, 0.13);
-  --color-fill: rgba(0, 0, 0, 0.04);
-  --color-fill-2: rgba(0, 0, 0, 0.08);
-  --color-text: #16181d;
-  --color-text-muted: #6a707c;
-  --color-accent: #16181d;
-  --color-accent-bright: #000000;
-  --color-sky: #4a4f5a;
-  --color-cyan: #6a707c;
-  --color-royal: #c7cbd4;
-  --color-navy: #e4e6eb;
-  --color-indigo: #3a3f4a;
-  --color-rose: var(--color-accent-bright);
-  --color-glass: rgba(255, 255, 255, 0.55);
-  --color-glass-strong: rgba(255, 255, 255, 0.72);
+/* Scrollable screens leave room for the floating nav + assistant button. */
+@utility pb-nav {
+  padding-bottom: calc(10.5rem + env(safe-area-inset-bottom));
 }
 
 html,
@@ -83,11 +64,16 @@ body,
   height: 100%;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -98,17 +84,12 @@ body {
   border: 1px solid var(--color-border);
 }
 
-/* Subtle glow for big hero numbers — soft white on dark, whisper on light. */
+/* Big hero numbers — a faint lift, not a glow. */
 .num-glow {
-  text-shadow:
-    0 0 18px rgba(255, 255, 255, 0.22),
-    0 0 4px rgba(255, 255, 255, 0.12);
-}
-:root[data-theme='light'] .num-glow {
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.12);
 }
 
-/* Hide scrollbars (e.g. the horizontally scrollable tab bar) */
+/* Hide scrollbars on horizontal scrollers */
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -117,105 +98,58 @@ body {
   display: none;
 }
 
-/* Subtle deepening gradient for hero cards. */
-.card-grad {
-  background-image: linear-gradient(160deg, var(--color-surface) 0%, #101218 100%);
-}
-:root[data-theme='light'] .card-grad {
-  background-image: linear-gradient(160deg, #ffffff 0%, #eef0f4 100%);
-}
-
 /* ---------------------------------------------------------------------------
-   Glass system — three tiers. Blur is expensive, so only top-level panels
-   (.glass / .glass-strong) get backdrop-filter; nested tiles use .glass-subtle.
-   Radius is left to rounded-* utilities so each card keeps its shape.
+   Card system — three tiers, all matte (no backdrop blur: cheaper, and the
+   mockup's cards are solid graphite, not glass).
+     .glass / .card-grad-glass  top-level card (hero and standard)
+     .glass-subtle              tile nested inside a card
+   Radius is left to rounded-* utilities. The class names predate the redesign
+   and are kept so every existing screen picks up the new look at once.
 --------------------------------------------------------------------------- */
-.glass {
-  background-color: var(--color-glass);
-  /* Specular sheen: soft light refraction falling from the top edge. */
-  background-image: radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 60%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
-  backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* Near shadow + far ambient + light top / dark bottom insets = depth. */
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.18),
-    0 12px 36px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
-}
-
-/* Heavier "liquid glass" pane for nav, sheets, and overlays — deeper blur and
-   saturation so content refracts through it, with a brighter top edge. */
-.glass-strong {
-  background-color: var(--color-glass-strong);
-  background-image: radial-gradient(130% 80% at 50% -20%, rgba(255, 255, 255, 0.1), transparent 62%);
-  -webkit-backdrop-filter: blur(30px) saturate(185%) brightness(1.06);
-  backdrop-filter: blur(30px) saturate(185%) brightness(1.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.25),
-    0 18px 48px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-}
-
-/* Nested tiles/rows inside a glass panel — translucent, no blur (perf). */
-.glass-subtle {
-  background-color: var(--color-fill);
+.glass,
+.card-grad,
+.card-grad-glass {
+  background-color: var(--color-surface);
+  /* Soft light falling on the top edge, fading into graphite. */
+  background-image:
+    radial-gradient(120% 60% at 50% -8%, rgba(255, 255, 255, 0.06), transparent 62%),
+    linear-gradient(180deg, #1b1c20 0%, #141518 100%);
   border: 1px solid var(--color-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-/* Hero-card variant: keeps the deepening gradient under the glass. */
+/* Hero card — a touch more light from above. */
 .card-grad-glass {
   background-image:
-    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
-    linear-gradient(160deg, rgba(21, 23, 30, 0.55) 0%, rgba(13, 14, 19, 0.6) 100%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
-  backdrop-filter: blur(16px) saturate(170%) brightness(1.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+    radial-gradient(110% 55% at 50% -6%, rgba(255, 255, 255, 0.09), transparent 64%),
+    linear-gradient(180deg, #1d1e22 0%, #131417 100%);
+}
+
+/* Nested tiles/rows inside a card. */
+.glass-subtle {
+  background-color: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Sheets and overlays — the one place real glass remains. */
+.glass-strong {
+  background-color: var(--color-glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  backdrop-filter: blur(28px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.18),
-    0 12px 36px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+    0 18px 48px rgba(0, 0, 0, 0.5);
 }
 
-/* Light-theme glass: dark hairlines, soft grey shadows, gentler sheen. */
-:root[data-theme='light'] .glass,
-:root[data-theme='light'] .glass-strong,
-:root[data-theme='light'] .card-grad-glass {
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 12px 36px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
-}
-:root[data-theme='light'] .card-grad-glass {
-  background-image:
-    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.6), transparent 60%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.6) 0%, rgba(236, 238, 244, 0.65) 100%);
-}
-
-/* Without backdrop-filter support the translucent panes ghost the content
-   behind them — fall back to near-opaque surfaces. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass,
-  .card-grad-glass {
-    background-color: rgba(20, 22, 30, 0.96);
-  }
   .glass-strong,
   .tabbar-glass {
-    background-color: rgba(16, 18, 26, 0.98);
-  }
-  :root[data-theme='light'] .glass,
-  :root[data-theme='light'] .card-grad-glass {
-    background-color: rgba(255, 255, 255, 0.96);
-  }
-  :root[data-theme='light'] .glass-strong,
-  :root[data-theme='light'] .tabbar-glass {
-    background-color: rgba(255, 255, 255, 0.98);
+    background-color: rgba(18, 19, 22, 0.98);
   }
 }
 
@@ -227,73 +161,31 @@ body {
   transform: scale(0.96);
 }
 
-/* Floating capsule "liquid glass" tab bar — a true pill (Tailwind's
-   rounded-full in the markup sets border-radius:9999px, which always yields a
-   correct stadium shape regardless of the bar's actual height). Kept as its
-   own class rather than reusing .glass-strong so this can push saturation/
-   highlight further without changing every sheet/overlay that also uses
-   .glass-strong. */
+/* Floating capsule tab bar — dark smoked glass with a hairline top light. */
 .tabbar-glass {
-  background-color: var(--color-glass-strong);
-  /* Two soft hotspots (upper-left brighter, lower-right dimmer) so the
-     capsule reads as curved glass catching light unevenly, not a flat tint. */
-  background-image:
-    radial-gradient(90% 140% at 22% -20%, rgba(255, 255, 255, 0.16), transparent 55%),
-    radial-gradient(70% 100% at 85% 120%, rgba(255, 255, 255, 0.05), transparent 60%);
-  -webkit-backdrop-filter: blur(34px) saturate(190%) brightness(1.08) contrast(1.03);
-  backdrop-filter: blur(34px) saturate(190%) brightness(1.08) contrast(1.03);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background-color: rgba(22, 23, 26, 0.78);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    0 20px 48px rgba(0, 0, 0, 0.4);
-}
-:root[data-theme='light'] .tabbar-glass {
-  border-color: rgba(0, 0, 0, 0.07);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.08),
-    0 20px 40px rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(0, 0, 0, 0.55);
 }
 
-/* Liquid-glass sliding capsule behind the active bottom-nav tab. Since every
-   tab is now a fixed square (icon-only), this degenerates to a circular glass
-   "blob" rather than an elongated pill — its own backdrop-filter lenses
-   (brightens + saturates + adds a specular hotspot) the icon and content
-   behind it. Position/size are set inline; the spring transition makes it
-   glide and resize between tabs. */
+/* Active-tab indicator: a solid light disc (the active icon turns dark on it),
+   gliding between tabs with a spring. Position/size are set inline. */
 .tab-pill {
   border-radius: 9999px;
-  background-image:
-    radial-gradient(120% 160% at 30% 15%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  -webkit-backdrop-filter: brightness(1.24) saturate(1.4) contrast(1.05);
-  backdrop-filter: brightness(1.24) saturate(1.4) contrast(1.05);
+  background-image: linear-gradient(180deg, #ffffff 0%, #d9dade 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.22),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 4px 14px rgba(0, 0, 0, 0.32);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 18px rgba(255, 255, 255, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.4);
   transition:
     transform 0.5s var(--ease-spring),
     width 0.5s var(--ease-spring),
     height 0.5s var(--ease-spring);
-}
-:root[data-theme='light'] .tab-pill {
-  background-image:
-    radial-gradient(120% 160% at 30% 15%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4) 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35));
-  border-color: rgba(0, 0, 0, 0.08);
-  -webkit-backdrop-filter: brightness(1.08) saturate(1.2) contrast(1.02);
-  backdrop-filter: brightness(1.08) saturate(1.2) contrast(1.02);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
-    0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* Screen enter: a soft, simple fade + rise when switching tabs. */
@@ -439,7 +331,7 @@ body {
   }
 }
 
-/* Readiness ring sweep-in: arc draws from empty to its target offset on load. */
+/* Ring sweep-in: arc draws from empty to its target offset on load. */
 @keyframes ring-sweep {
   from {
     stroke-dashoffset: var(--circ, 691px);
@@ -453,11 +345,8 @@ body {
   stroke-dashoffset: var(--target-offset);
   animation: ring-sweep 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   /* Shape-aware glow that follows the stroke (no boxy filter region). */
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4))
-    drop-shadow(0 0 12px rgba(255, 255, 255, 0.22));
-}
-:root[data-theme='light'] .ring-arc {
-  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.18));
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45))
+    drop-shadow(0 0 14px rgba(255, 255, 255, 0.22));
 }
 
 @media (prefers-reduced-motion: reduce) {

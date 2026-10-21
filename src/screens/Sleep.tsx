@@ -7,6 +7,9 @@ import SleepStat from '../components/sleep/SleepStat'
 import SleepScoreRing from '../components/sleep/SleepScoreRing'
 import SleepBalanceCard from '../components/sleep/SleepBalanceCard'
 import BedtimeCard from '../components/sleep/BedtimeCard'
+import Card from '../components/ui/Card'
+import PageHeader from '../components/ui/PageHeader'
+import { Eyebrow } from '../components/ui/SectionHeader'
 
 export default function Sleep() {
   const { health, loading } = useHealth()
@@ -34,30 +37,24 @@ export default function Sleep() {
   const balanceVerdict = computeSleepBalance(deepMin, remMin, totalMin)
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
-      {/* Header */}
-      <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">Sleep</h1>
-        <p className="mt-0.5 text-text-muted">Last night</p>
-      </div>
+    <div className="flex-1 overflow-y-auto px-5 pb-nav">
+      <PageHeader title="Sleep" subtitle="Last night" />
 
       {/* Hero card: total + score ring, hypnogram, stat tiles */}
-      <div className="card-grad-glass mt-4 rounded-3xl px-5 py-5">
+      <Card variant="hero" className="mt-5 px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-baseline">
-              <span className="num-glow font-display text-[48px] font-bold leading-none text-text">
+              <span className="num-glow text-[52px] font-semibold leading-none tracking-tight text-text tabular-nums">
                 {hours}
               </span>
-              <span className="font-display text-2xl font-bold text-text-muted">h</span>
-              <span className="num-glow ml-1.5 font-display text-[48px] font-bold leading-none text-text">
+              <span className="ml-0.5 text-xl text-text-muted">h</span>
+              <span className="num-glow ml-2 text-[52px] font-semibold leading-none tracking-tight text-text tabular-nums">
                 {mins}
               </span>
-              <span className="font-display text-2xl font-bold text-text-muted">m</span>
+              <span className="ml-0.5 text-xl text-text-muted">m</span>
             </div>
-            <span className="mt-2 block text-[11px] font-semibold tracking-[0.2em] text-indigo">
-              TOTAL SLEEP
-            </span>
+            <Eyebrow className="mt-2">Total sleep</Eyebrow>
           </div>
 
           <SleepScoreRing score={sleepScore} label={sleepLabel} loading={loading} />
@@ -108,7 +105,7 @@ export default function Sleep() {
           Asleep <span className="font-medium text-text">{asleepAt}</span> → Awake{' '}
           <span className="font-medium text-text">{awakeAt}</span>
         </div>
-      </div>
+      </Card>
 
       {/* Sleep balance verdict */}
       <div className="mt-4">

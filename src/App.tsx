@@ -14,18 +14,18 @@ import Social from './screens/Social'
 import Settings from './screens/Settings'
 import Assistant from './screens/Assistant'
 import More, { type MoreScreenId } from './screens/More'
+import Body from './screens/Body'
 import { ChevronLeft } from 'lucide-react'
 import AssistantFab from './components/AssistantFab'
 import { useDailyNotifications } from './hooks/useDailyNotifications'
 import { useDailySnapshot } from './hooks/useDailySnapshot'
 import { useSettings } from './settingsContext'
 
-/** Per-page ambient top glow — monochrome, varied position/strength per tab so
-    switching tabs still cross-fades with a sense of motion. */
 /** Every routable screen: the five tabs plus the screens nested under More. */
 type ScreenId = TabId | MoreScreenId
 
 const MORE_SCREENS: Record<MoreScreenId, true> = {
+  body: true,
   sleep: true,
   energy: true,
   motivation: true,
@@ -35,8 +35,13 @@ const MORE_SCREENS: Record<MoreScreenId, true> = {
 
 const isMoreScreen = (id: ScreenId): id is MoreScreenId => id in MORE_SCREENS
 
+/** Per-page ambient top glow — monochrome, varied position/strength per screen
+    so switching still cross-fades with a sense of motion. */
 const TAB_GRADIENTS: Record<ScreenId, string> = {
-  today:'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(200,205,215,0.08), transparent 52%)',
+  today:
+    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(200,205,215,0.08), transparent 52%)',
+  body:
+    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(199,203,212,0.08), transparent 52%)',
   energy:
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(255,255,255,0.07), transparent 52%)',
   sleep:
@@ -109,7 +114,15 @@ export default function App() {
           )}
 
           {screen === 'today' ? (
-            <Home onOpenSleep={() => setScreen('sleep')} />
+            <Home
+              onOpenSleep={() => setScreen('sleep')}
+              onOpenBody={() => setScreen('body')}
+              onQuickAdd={(target) =>
+                target === 'assistant'
+                  ? setAssistantOpen(true)
+                  : setScreen(target === 'meal' ? 'food' : target === 'workout' ? 'train' : 'energy')
+              }
+            />
           ) : screen === 'train' ? (
             <Training />
           ) : screen === 'food' ? (
@@ -118,6 +131,8 @@ export default function App() {
             <Journal />
           ) : screen === 'more' ? (
             <More onOpen={setScreen} onOpenSettings={() => setSettingsOpen(true)} />
+          ) : screen === 'body' ? (
+            <Body />
           ) : screen === 'sleep' ? (
             <Sleep />
           ) : screen === 'energy' ? (

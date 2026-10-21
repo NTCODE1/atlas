@@ -1,4 +1,7 @@
-import { ChevronDown, Flame } from 'lucide-react'
+import { Flame } from 'lucide-react'
+import Card from '../components/ui/Card'
+import PageHeader from '../components/ui/PageHeader'
+import ProgressBar from '../components/ui/ProgressBar'
 import { nutrition } from '../data'
 import { useCountUp } from '../hooks/useCountUp'
 import { useNutritionTargets } from '../nutritionTargets'
@@ -47,61 +50,44 @@ export default function Nutrition() {
   const progress = targets.kcal > 0 ? Math.min(totals.kcal / targets.kcal, 1) : 0
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
-      {/* Header + calorie hero */}
-      <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">Nutrition</h1>
-        <button
-          type="button"
-          className="mt-0.5 flex items-center gap-1 text-text-muted transition-colors hover:text-text"
-        >
-          Today
-          <ChevronDown size={16} strokeWidth={2} />
-        </button>
+    <div className="flex-1 overflow-y-auto px-5 pb-nav">
+      <PageHeader title="Nutrition" subtitle="Today" />
 
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="num-glow font-display text-[52px] font-bold leading-none text-text">
+      {/* Calorie + macro hero */}
+      <Card variant="hero" className="mt-5 px-5 pb-5 pt-5">
+        <div className="flex items-baseline gap-1.5">
+          <span className="num-glow text-[40px] font-semibold leading-none tracking-tight text-text tabular-nums">
             {consumed.toLocaleString()}
           </span>
-          <span className="text-lg text-text-muted">
+          <span className="text-base text-text-muted">
             / {targets.kcal.toLocaleString()} {nutrition.unit}
           </span>
         </div>
-
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-fill-2">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${Math.round(progress * 100)}%`,
-              background: 'linear-gradient(90deg, var(--color-accent), var(--color-sky))',
-            }}
-          />
-        </div>
-        <span className="mt-2 block text-sm text-text-muted">
-          {remaining.toLocaleString()} {nutrition.unit} remaining
-        </span>
-
-        {/* Live active energy burned (only shown when synced from the API). */}
-        {health.activeEnergyKcal != null && (
-          <span className="mt-1 flex items-center gap-1 text-sm text-text-muted">
-            <Flame size={14} strokeWidth={2} className="text-accent" />
-            {Math.round(health.activeEnergyKcal).toLocaleString()} {nutrition.unit} burned
+        <ProgressBar value={progress} className="mt-3" />
+        <div className="mt-2 flex items-center justify-between text-sm text-text-muted">
+          <span>
+            {remaining.toLocaleString()} {nutrition.unit} remaining
           </span>
-        )}
-      </div>
+          {/* Live active energy burned (only shown when synced from the API). */}
+          {health.activeEnergyKcal != null && (
+            <span className="flex items-center gap-1">
+              <Flame size={13} strokeWidth={2} />
+              {Math.round(health.activeEnergyKcal).toLocaleString()} burned
+            </span>
+          )}
+        </div>
 
-      {/* Macro rings */}
-      <div className="card-grad-glass mt-5 flex gap-2 rounded-3xl px-4 py-6">
-        {nutrition.macros.map((m) => (
-          <MacroRing
-            key={m.label}
-            label={m.label}
-            grams={Math.round(MACRO_GRAMS[m.label]?.(totals) ?? 0)}
-            target={macroTargetFor[m.label] ?? m.target}
-            color={m.color}
-          />
-        ))}
-      </div>
+        <div className="mt-5 flex gap-3">
+          {nutrition.macros.map((m) => (
+            <MacroRing
+              key={m.label}
+              label={m.label}
+              grams={Math.round(MACRO_GRAMS[m.label]?.(totals) ?? 0)}
+              target={macroTargetFor[m.label] ?? m.target}
+            />
+          ))}
+        </div>
+      </Card>
 
       {/* Track your meal */}
       <div className="mt-4">

@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react'
 import { useCountUp } from '../../hooks/useCountUp'
+import Ring from '../ui/Ring'
 
 interface SleepScoreRingProps {
   score: number
@@ -9,77 +9,19 @@ interface SleepScoreRingProps {
   loading?: boolean
 }
 
-const SIZE = 116
-const STROKE = 10
-const RADIUS = (SIZE - STROKE) / 2
-const CIRC = 2 * Math.PI * RADIUS
-
-/**
- * Compact score donut. Mirrors ReadinessRing but smaller, using the shared
- * `.ring-arc` sweep animation and glow.
- */
+/** Compact sleep-score ring for the Sleep hero card. */
 export default function SleepScoreRing({ score, label, loading }: SleepScoreRingProps) {
   const count = useCountUp(loading ? 0 : score, 1200)
-  const targetOffset = CIRC * (1 - score / 100)
-
   return (
-    <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
-      <svg
-        width={SIZE}
-        height={SIZE}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-        className="-rotate-90 overflow-visible"
-      >
-        <defs>
-          <linearGradient id="sleep-ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--color-cyan)" />
-            <stop offset="100%" stopColor="var(--color-accent)" />
-          </linearGradient>
-        </defs>
-
-        {/* Track */}
-        <circle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={RADIUS}
-          fill="none"
-          stroke="var(--color-fill)"
-          strokeWidth={STROKE}
-        />
-
-        {/* Progress arc — stays fully unfilled while loading instead of
-            sweeping to a score computed from placeholder zeros. */}
-        <circle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={RADIUS}
-          fill="none"
-          stroke="url(#sleep-ring-grad)"
-          strokeWidth={STROKE}
-          strokeLinecap="round"
-          strokeDasharray={CIRC}
-          strokeDashoffset={loading ? CIRC : undefined}
-          className={loading ? '' : 'ring-arc'}
-          style={
-            loading
-              ? undefined
-              : ({
-                  '--target-offset': `${targetOffset}px`,
-                  '--circ': `${CIRC}px`,
-                } as CSSProperties)
-          }
-        />
-      </svg>
-
-      {/* Centre label */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="num-glow font-display text-[34px] font-bold leading-none text-text">
+    <div className="w-[104px] shrink-0">
+      <Ring progress={score / 100} size={104} stroke={9} loading={loading}>
+        <span className="num-glow text-[30px] font-semibold leading-none text-text tabular-nums">
           {loading ? '–' : count}
         </span>
-        <span className="mt-1 font-display text-[10px] font-semibold tracking-[0.32em] text-indigo">
+        <span className="mt-1 text-[9.5px] font-medium tracking-[0.2em] text-text-muted">
           {loading ? 'LOADING' : label ? label.toUpperCase() : 'SCORE'}
         </span>
-      </div>
+      </Ring>
     </div>
   )
 }

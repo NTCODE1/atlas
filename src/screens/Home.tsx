@@ -1,193 +1,217 @@
-import { useState } from 'react'
-import { ChevronRight, Footprints, Flame, Heart, Scale } from 'lucide-react'
-import { user, formatToday, stats, activity, readinessVerdict, type Stat } from '../data'
+import { useState, type ReactNode } from 'react'
+import { Coffee, Heart, Moon, Plus, Scale } from 'lucide-react'
+import { readinessVerdict } from '../data'
 import { useHealth } from '../api/healthContext'
 import { useReadiness } from '../hooks/useReadiness'
 import { useSettings } from '../settingsContext'
 import ReadinessRing from '../components/home/ReadinessRing'
-import StatTile from '../components/home/StatTile'
-import MetricTile from '../components/home/MetricTile'
-import FocusCard from '../components/home/FocusCard'
 import ProgressTile from '../components/home/ProgressTile'
 import WaterCard from '../components/WaterCard'
 import BriefingCard from '../components/home/BriefingCard'
-import WeightSheet from '../components/home/WeightSheet'
+import TodayChecklist from '../components/home/TodayChecklist'
+import QuickAddSheet, { type QuickAddTarget } from '../components/home/QuickAddSheet'
+import Card from '../components/ui/Card'
+import PageHeader from '../components/ui/PageHeader'
+import { Eyebrow } from '../components/ui/SectionHeader'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useWeightLog } from '../hooks/useWeightLog'
 import { kgToDisplay } from '../settings'
 import { latestEntry } from '../weightLog'
-import { snapshotList, cutoffDateISO, type SnapshotStore, type DailySnapshot } from '../dailySnapshot'
 import { todayISO } from '../workouts'
 import type { CaffeineDose } from '../caffeine'
 
-/** Real day-over-day % change from `prior` to `today`, or undefined if either
- *  is missing (no fabricated trend when there's nothing to compare against). */
-function pctTrend(
-  today: number | null | undefined,
-  prior: number | null | undefined,
-): { trend: string; trendDir: 'up' | 'down' } | undefined {
-  if (today == null || prior == null || prior === 0) return undefined
-  const pct = Math.round(((today - prior) / prior) * 100)
-  return { trend: `${Math.abs(pct)}%`, trendDir: pct >= 0 ? 'up' : 'down' }
-}
-
 interface HomeProps {
-  /** Sleep moved under More — this links Today's sleep/recovery numbers to the full screen. */
+  /** Open the full Sleep screen (Sleep lives under More). */
   onOpenSleep: () => void
+  /** Open the Body screen (weight trend + plan phase). */
+  onOpenBody: () => void
+  /** Quick-add hand-offs to the screen that owns each log. */
+  onQuickAdd: (target: Exclude<QuickAddTarget, 'weight'>) => void
 }
 
-export default function Home({ onOpenSleep }: HomeProps) {
+/** Time-of-day greeting for the header's light lead line. */
+function greeting(now = new Date()): string {
+  const h = now.getHours()
+  if (h < 5) return 'Good night,'
+  if (h < 12) return 'Good morning,'
+  if (h < 18) return 'Good afternoon,'
+  return 'Good evening,'
+}
+
+const formatDate = (d = new Date()) =>
+  d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+
+export default function Home({ onOpenSleep, onOpenBody, onQuickAdd }: HomeProps) {
   const { health, loading } = useHealth()
   const { settings } = useSettings()
-  const [weightEntries, setWeightEntries] = useWeightLog()
-  const [snapshots] = useLocalStorage<SnapshotStore>('atlas.snapshots', {})
-  // Read-only here: doses are owned by the Energy screen. health.caffeineMg is
-  // a different, unused Apple Health metric — this is what's actually logged.
+  const [weightEntries] = useWeightLog()
+  // Read-only here: doses are owned by the Energy screen.
   const [caffeineDoses] = useLocalStorage<CaffeineDose[]>('atlas.caffeine.doses', [])
-  const [weightOpen, setWeightOpen] = useState(false)
-  const latestWeight = latestEntry(weightEntries)
-  // Prefer the live scale weight (Apple Health) when present; else the manual log.
-  const displayWeightKg = health.weightKg ?? latestWeight?.kg ?? null
-
-  const today = todayISO()
-  const yesterday = todayISO(new Date(Date.now() - 24 * 60 * 60 * 1000))
-  const yesterdaySnap = snapshots[yesterday]
-  const todayCaffeineMg = caffeineDoses
-    .filter((d) => d.date === today)
-    .reduce((sum, d) => sum + (d.mg ?? 0), 0)
-  // Up to 6 days of real history BEFORE today, oldest first — today's own point
-  // is appended live (below) so it's never a render behind the displayed value.
-  const pastDays = snapshotList(snapshots).filter((s) => s.date < today && s.date >= cutoffDateISO(today, 6))
-  const pastSpark = (field: keyof DailySnapshot): number[] =>
-    pastDays.map((s) => s[field]).filter((v): v is number => typeof v === 'number')
-
-  // Per-tile live overrides. Trend/spark are computed from real history
-  // (atlas.snapshots) — no data yet means no trend/spark, not a fake one.
-  const liveStats = stats.map((stat): Stat => {
-    if (stat.label === 'SLEEP' && health.sleepHours != null) {
-      const trend = pctTrend(health.sleepTotalMinutes, yesterdaySnap?.sleepTotalMinutes)
-      const spark = pastSpark('sleepTotalMinutes')
-      if (health.sleepTotalMinutes != null) spark.push(health.sleepTotalMinutes)
-      return {
-        ...stat,
-        value: String(health.sleepHours),
-        value2: String(health.sleepMinutes ?? 0),
-        trend: trend?.trend,
-        trendDir: trend?.trendDir,
-        sub: trend ? undefined : 'no data yet',
-        spark,
-      }
-    }
-    if (stat.label === 'HRV' && health.hrv != null) {
-      const trend = pctTrend(health.hrv, yesterdaySnap?.hrv)
-      const spark = pastSpark('hrv')
-      spark.push(Math.round(health.hrv))
-      return {
-        ...stat,
-        value: String(Math.round(health.hrv)),
-        trend: trend?.trend,
-        trendDir: trend?.trendDir,
-        sub: trend ? undefined : 'no data yet',
-        spark,
-      }
-    }
-    if (stat.label === 'CAFFEINE') {
-      // Always live — 0mg is a real reading, not "missing data" like sleep/HRV.
-      return {
-        ...stat,
-        value: String(Math.round(todayCaffeineMg)),
-        spark: [...pastSpark('caffeineMg'), Math.round(todayCaffeineMg)],
-      }
-    }
-    return stat
-  })
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
 
   const { readiness: readinessResult, readinessLabel } = useReadiness()
-  const ringScore = readinessResult.score
   const verdict = readinessVerdict(readinessResult)
 
-  // Daily activity tiles — each field falls back independently to data.ts.
-  const steps = Math.round(health.steps ?? activity.steps)
-  const activeKcal = Math.round(health.activeEnergyKcal ?? activity.activeKcal)
-  const avgHr = Math.round(health.averageHeartRate ?? activity.avgHeartRate)
+  const today = todayISO()
+  const caffeineMg = caffeineDoses.filter((d) => d.date === today).reduce((sum, d) => sum + (d.mg ?? 0), 0)
+
+  // Today's weigh-in: the manual log for today, else today's scale reading.
+  // An older weight shows its date instead of pretending to be today's.
+  const latestManual = latestEntry(weightEntries)
+  const weight =
+    latestManual?.date === today
+      ? { kg: latestManual.kg, sub: 'today' }
+      : health.weightKg != null && health.weightDate === today
+        ? { kg: health.weightKg, sub: 'today' }
+        : latestManual
+          ? { kg: latestManual.kg, sub: 'last logged' }
+          : null
+
+  const pickQuickAdd = (target: QuickAddTarget) => {
+    setQuickAddOpen(false)
+    if (target === 'weight') onOpenBody()
+    else onQuickAdd(target)
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
-      {/* Greeting */}
-      <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">
-          {user.greeting}, {settings.name}
-        </h1>
-        <p className="mt-0.5 text-text-muted">{formatToday()}</p>
-      </div>
+    <div className="flex-1 overflow-y-auto px-5 pb-nav">
+      <PageHeader
+        lead={greeting()}
+        title={settings.name}
+        subtitle={formatDate()}
+        action={
+          <button
+            type="button"
+            onClick={() => setQuickAddOpen(true)}
+            aria-label="Quick add"
+            className="press grid h-11 w-11 place-items-center rounded-full bg-accent-bright text-bg shadow-[0_0_18px_rgba(255,255,255,0.2)]"
+          >
+            <Plus size={22} strokeWidth={2.2} />
+          </button>
+        }
+      />
 
-      {/* Readiness ring */}
-      <div className="card-grad-glass mt-4 rounded-3xl px-4 py-6">
-        <ReadinessRing score={ringScore} label={readinessLabel} loading={loading} />
-        <p className="mx-auto mt-5 max-w-[18rem] text-center text-sm leading-relaxed text-text-muted">
+      {/* Readiness hero */}
+      <Card variant="hero" className="mt-5 px-5 pb-5 pt-6">
+        <ReadinessRing score={readinessResult.score} label={readinessLabel} loading={loading} />
+        <p className="mx-auto mt-4 max-w-[17rem] text-center text-[13px] leading-relaxed text-text-muted">
           {loading ? 'Loading your data…' : verdict}
         </p>
+      </Card>
 
-        {/* Three stat tiles */}
-        <div className="mt-5 flex gap-2.5">
-          {liveStats.map((stat) => (
-            <StatTile key={stat.label} stat={stat} />
-          ))}
-        </div>
-
-        <button
-          type="button"
+      {/* Sleep · HRV · Caffeine · Weight — "—" when there's no real reading. */}
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        <MiniStat
+          icon={<Moon size={13} strokeWidth={1.9} />}
+          label="Sleep"
+          sub="total"
           onClick={onOpenSleep}
-          className="press mx-auto mt-4 flex items-center gap-0.5 text-xs font-medium text-text-muted transition-colors hover:text-text"
-        >
-          Sleep details
-          <ChevronRight size={14} strokeWidth={1.9} />
-        </button>
+          value={
+            health.sleepHours != null ? (
+              <>
+                {health.sleepHours}
+                <Unit>h</Unit>
+                {health.sleepMinutes ?? 0}
+                <Unit>m</Unit>
+              </>
+            ) : (
+              '—'
+            )
+          }
+        />
+        <MiniStat
+          icon={<Heart size={13} strokeWidth={1.9} />}
+          label="HRV"
+          sub="avg"
+          onClick={onOpenSleep}
+          value={
+            health.hrv != null ? (
+              <>
+                {Math.round(health.hrv)}
+                <Unit>ms</Unit>
+              </>
+            ) : (
+              '—'
+            )
+          }
+        />
+        <MiniStat
+          icon={<Coffee size={13} strokeWidth={1.9} />}
+          label="Caffeine"
+          sub="today"
+          onClick={() => onQuickAdd('caffeine')}
+          value={
+            <>
+              {Math.round(caffeineMg)}
+              <Unit>mg</Unit>
+            </>
+          }
+        />
+        <MiniStat
+          icon={<Scale size={13} strokeWidth={1.9} />}
+          label="Weight"
+          sub={weight?.sub ?? 'tap to log'}
+          onClick={onOpenBody}
+          value={
+            weight ? (
+              <>
+                {kgToDisplay(weight.kg, settings.weightUnit)}
+                <Unit>{settings.weightUnit}</Unit>
+              </>
+            ) : (
+              '—'
+            )
+          }
+        />
       </div>
 
-      {/* Daily activity + body weight */}
-      <div className="mt-4 grid grid-cols-2 gap-2.5 min-[400px]:grid-cols-4">
-        <MetricTile icon={<Footprints size={15} />} label="STEPS" value={steps.toLocaleString()} />
-        <MetricTile icon={<Flame size={15} />} label="ACTIVE" value={String(activeKcal)} unit="kcal" />
-        <MetricTile icon={<Heart size={15} />} label="AVG HR" value={String(avgHr)} unit="bpm" />
-        <button
-          type="button"
-          onClick={() => setWeightOpen(true)}
-          aria-label="Body weight log"
-          className="press h-full text-left [&>div]:h-full"
-        >
-          <MetricTile
-            icon={<Scale size={15} />}
-            label="WEIGHT"
-            value={displayWeightKg != null ? String(kgToDisplay(displayWeightKg, settings.weightUnit)) : '—'}
-            unit={displayWeightKg != null ? settings.weightUnit : undefined}
-          />
-        </button>
+      {/* The plan's daily checklist */}
+      <div className="mt-3">
+        <TodayChecklist />
       </div>
 
-      {/* Today's Focus */}
-      <div className="mt-4">
-        <FocusCard />
-      </div>
-
-      {/* Deep Work + Hydration */}
-      <div className="mt-4 flex gap-3">
+      {/* Deep work + hydration */}
+      <div className="mt-3 flex gap-3">
         <ProgressTile />
         <WaterCard compact />
       </div>
 
       {/* AI daily brief */}
-      <div className="mt-4">
+      <div className="mt-3">
         <BriefingCard />
       </div>
 
-      {weightOpen && (
-        <WeightSheet
-          entries={weightEntries}
-          setEntries={setWeightEntries}
-          onClose={() => setWeightOpen(false)}
-        />
-      )}
+      {quickAddOpen && <QuickAddSheet onPick={pickQuickAdd} onClose={() => setQuickAddOpen(false)} />}
     </div>
+  )
+}
+
+function Unit({ children }: { children: ReactNode }) {
+  return <span className="mr-0.5 text-[11px] font-normal text-text-muted">{children}</span>
+}
+
+/** Small tappable stat tile (icon, caps label, value, muted sub-label). */
+function MiniStat({
+  icon,
+  label,
+  value,
+  sub,
+  onClick,
+}: {
+  icon: ReactNode
+  label: string
+  value: ReactNode
+  sub: string
+  onClick: () => void
+}) {
+  return (
+    <button type="button" onClick={onClick} className="glass press flex min-w-0 flex-col rounded-2xl px-2.5 py-3 text-left">
+      <span className="text-text-muted">{icon}</span>
+      <Eyebrow className="mt-1.5 truncate !text-[9.5px] !tracking-[0.1em]">{label}</Eyebrow>
+      <span className="mt-1 truncate text-[17px] font-semibold leading-tight tracking-tight text-text tabular-nums">
+        {value}
+      </span>
+      <span className="mt-0.5 truncate text-[11px] text-text-muted">{sub}</span>
+    </button>
   )
 }

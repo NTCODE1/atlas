@@ -30,10 +30,10 @@ export default function Journal() {
   const goToday = () => setViewDate(new Date(now.getFullYear(), now.getMonth(), 1))
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
+    <div className="flex-1 overflow-y-auto px-6 pb-nav">
       {/* Header with month navigation */}
       <div className="flex items-center justify-between pt-1">
-        <h1 className="font-display text-[28px] font-bold leading-tight text-text">{monthLabel}</h1>
+        <h1 className="text-[28px] font-semibold leading-[1.1] tracking-tight text-text">{monthLabel}</h1>
         <div className="flex items-center gap-1.5">
           {!isCurrentMonth && (
             <button

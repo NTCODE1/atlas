@@ -1,10 +1,11 @@
-import { AtSign, ChevronRight, Moon, Settings as SettingsIcon, Sparkles, Wallet, Zap } from 'lucide-react'
+import { AtSign, ChevronRight, Moon, Scale, Settings as SettingsIcon, Sparkles, Wallet, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 /** Screens reachable from More — one level below the five primary tabs. */
-export type MoreScreenId = 'sleep' | 'energy' | 'motivation' | 'finance' | 'social'
+export type MoreScreenId = 'body' | 'sleep' | 'energy' | 'motivation' | 'finance' | 'social'
 
 const ROWS: { id: MoreScreenId; label: string; sub: string; icon: LucideIcon }[] = [
+  { id: 'body', label: 'Body', sub: 'Weight trend, plan phase', icon: Scale },
   { id: 'sleep', label: 'Sleep', sub: 'Last night, stages, bedtime', icon: Moon },
   { id: 'energy', label: 'Energy', sub: 'Caffeine, fasting, forecast', icon: Zap },
   { id: 'motivation', label: 'Motivation', sub: 'Goals and dream board', icon: Sparkles },
@@ -20,9 +21,9 @@ interface MoreProps {
 /** Overflow list for everything that isn't a daily destination. */
 export default function More({ onOpen, onOpenSettings }: MoreProps) {
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
+    <div className="flex-1 overflow-y-auto px-6 pb-nav">
       <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">More</h1>
+        <h1 className="text-[32px] font-semibold leading-[1.1] tracking-tight text-text">More</h1>
       </div>
 
       <ul className="glass mt-4 divide-y divide-border overflow-hidden rounded-2xl">

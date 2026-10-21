@@ -12,6 +12,29 @@ export const sortEntries = (entries: WeightEntry[]): WeightEntry[] =>
 export const latestEntry = (entries: WeightEntry[]): WeightEntry | undefined =>
   sortEntries(entries)[entries.length - 1]
 
+/**
+ * One weight per day from both sources, oldest first: the manual log wins
+ * (a deliberate morning weigh-in), else the scale reading Apple Health synced
+ * into that day's snapshot.
+ */
+export function dailyWeights(entries: WeightEntry[], scaleByDate: Record<string, number | undefined>): WeightEntry[] {
+  const byDate = new Map<string, number>()
+  for (const [date, kg] of Object.entries(scaleByDate)) if (kg != null) byDate.set(date, kg)
+  for (const e of entries) byDate.set(e.date, e.kg)
+  return sortEntries([...byDate].map(([date, kg]) => ({ date, kg })))
+}
+
+/** Mean of the weights in the 7 days ending `endDate` (inclusive), or null if none. */
+export function sevenDayAverage(series: WeightEntry[], endDate: string): number | null {
+  const end = new Date(`${endDate}T00:00:00`)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 6)
+  const from = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`
+  const inWindow = series.filter((e) => e.date >= from && e.date <= endDate)
+  if (inWindow.length === 0) return null
+  return inWindow.reduce((sum, e) => sum + e.kg, 0) / inWindow.length
+}
+
 /** Chart points in the display unit, oldest first. */
 export const entriesToPoints = (
   entries: WeightEntry[],

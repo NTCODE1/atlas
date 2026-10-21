@@ -87,10 +87,10 @@ export default function Energy() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-28">
+    <div className="flex-1 overflow-y-auto px-6 pb-nav">
       {/* Header */}
       <div className="pt-1">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-text">Energy</h1>
+        <h1 className="text-[32px] font-semibold leading-[1.1] tracking-tight text-text">Energy</h1>
         <p className="mt-0.5 text-text-muted">{formatToday()}</p>
       </div>
 

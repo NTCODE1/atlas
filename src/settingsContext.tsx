@@ -1,10 +1,8 @@
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { useSyncedStorage } from './hooks/useSyncedStorage'
 import { DEFAULT_SETTINGS, type Settings } from './settings'
 
-/** PWA browser-chrome color per theme (matches --color-bg). */
-const THEME_COLOR = { dark: '#08090C', light: '#f4f5f7' } as const
 
 interface SettingsContextValue {
   settings: Settings
@@ -28,14 +26,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   // Merge over defaults so settings saved by older app versions gain new fields.
   const settings = { ...DEFAULT_SETTINGS, ...stored }
-
-  // Apply the theme to the document root; CSS variables do the rest.
-  useEffect(() => {
-    document.documentElement.dataset.theme = settings.theme
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', THEME_COLOR[settings.theme])
-  }, [settings.theme])
 
   return (
     <SettingsContext.Provider value={{ settings, setSettings, avatar, setAvatar }}>
