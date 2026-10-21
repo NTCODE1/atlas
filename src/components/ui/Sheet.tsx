@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
@@ -32,9 +32,29 @@ export default function Sheet({ title, maxHeight = 'auto', onClose, children }: 
   const [closing, setClosing] = useState(false)
   const start = useRef<{ y: number; t: number } | null>(null)
 
+  // While open, flag <body> so the app shell shrinks back behind the sheet
+  // (.app-shell in index.css). A count, not a boolean, so a sheet opened from
+  // another sheet doesn't un-shrink the app when the inner one closes.
+  const pushed = useRef(false)
+  const releasePush = () => {
+    if (!pushed.current) return
+    pushed.current = false
+    const n = Number(document.body.dataset.sheets ?? '1') - 1
+    if (n > 0) document.body.dataset.sheets = String(n)
+    else delete document.body.dataset.sheets
+  }
+  useEffect(() => {
+    pushed.current = true
+    document.body.dataset.sheets = String(Number(document.body.dataset.sheets ?? '0') + 1)
+    return releasePush
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const requestClose = () => {
     if (closing) return
     setClosing(true)
+    // Let the app grow back in step with the sheet sliding away.
+    releasePush()
     setTimeout(onClose, LEAVE_MS)
   }
 

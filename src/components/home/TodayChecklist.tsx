@@ -152,11 +152,13 @@ function ChecklistRow({ item }: { item: Item }) {
   const body = (
     <>
       <span
-        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border transition-colors ${
-          item.done ? 'border-transparent bg-accent-bright text-bg' : 'border-white/25'
+        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border transition-[background-color,border-color,box-shadow] duration-300 ${
+          item.done
+            ? 'border-transparent bg-accent-bright text-bg shadow-[0_0_10px_rgba(255,255,255,0.35)]'
+            : 'border-white/25'
         }`}
       >
-        {item.done && <Check size={13} strokeWidth={3} />}
+        {item.done && <Check size={13} strokeWidth={3} className="tick-pop" />}
       </span>
       <span className={`flex-1 text-[15px] ${item.done ? 'text-text' : 'text-text/80'}`}>{item.label}</span>
       <span className="text-xs tabular-nums text-text-muted">{item.hint}</span>

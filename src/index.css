@@ -164,8 +164,8 @@ h2 {
   background-image:
     radial-gradient(120% 60% at 30% -10%, rgba(255, 255, 255, 0.09), transparent 60%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01) 60%, rgba(255, 255, 255, 0.025));
-  -webkit-backdrop-filter: blur(26px) saturate(170%);
-  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
     inset 0 1px 0.5px rgba(255, 255, 255, 0.2),
@@ -238,11 +238,6 @@ h2 {
   transition-timing-function: var(--ease-out-soft);
 }
 
-/* Content fades out under the header instead of hard-clipping at its edge. */
-.fade-top {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
-}
 
 /* ---------------------------------------------------------------------------
    Liquid glass (iOS 26 style) — the nav bar, its active-tab lens and the AI
@@ -354,32 +349,45 @@ h2 {
   animation: screen-in 0.4s var(--ease-out-soft) both;
 }
 
-/* Main screens slide in from the side you're navigating towards. */
+/* Main screens slide in from the side you're navigating towards.
+   Transform only — no opacity on the screen wrapper: an ancestor with
+   opacity < 1 (or a mask/filter) becomes the "backdrop root", so the glass
+   cards inside would stop blurring the app background mid-animation and pop
+   when it ends. The fade comes from the cards' own stagger below instead. */
 @keyframes screen-in-right {
   from {
-    opacity: 0;
-    transform: translateX(28px);
+    transform: translate3d(32px, 0, 0);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
 @keyframes screen-in-left {
   from {
-    opacity: 0;
-    transform: translateX(-28px);
+    transform: translate3d(-32px, 0, 0);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
 .screen-enter-right {
-  animation: screen-in-right 0.5s var(--ease-ios) both;
+  animation: screen-in-right 0.55s var(--ease-ios) both;
 }
 .screen-enter-left {
-  animation: screen-in-left 0.5s var(--ease-ios) both;
+  animation: screen-in-left 0.55s var(--ease-ios) both;
+}
+
+/* iOS sheet "push back": while any sheet is open (Sheet.tsx sets
+   body[data-sheets]) the app shrinks slightly and rounds its corners, as if
+   the sheet were lifting it away. Transform only, for the same reason as above. */
+.app-shell {
+  transition:
+    transform 0.5s var(--ease-ios),
+    border-radius 0.5s var(--ease-ios);
+}
+body[data-sheets] .app-shell {
+  transform: scale(0.94) translate3d(0, 10px, 0);
+  border-radius: 22px;
 }
 
 /* Cards rise in one after another as a screen opens: targets the direct
@@ -388,7 +396,7 @@ h2 {
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 14px, 0) scale(0.985);
   }
   to {
     opacity: 1;
@@ -396,15 +404,39 @@ h2 {
   }
 }
 .stagger > .overflow-y-auto > * {
-  animation: rise-in 0.55s var(--ease-ios) both;
+  animation: rise-in 0.6s var(--ease-ios) both;
 }
-.stagger > .overflow-y-auto > :nth-child(2) { animation-delay: 40ms; }
-.stagger > .overflow-y-auto > :nth-child(3) { animation-delay: 80ms; }
-.stagger > .overflow-y-auto > :nth-child(4) { animation-delay: 120ms; }
-.stagger > .overflow-y-auto > :nth-child(5) { animation-delay: 160ms; }
-.stagger > .overflow-y-auto > :nth-child(6) { animation-delay: 200ms; }
-.stagger > .overflow-y-auto > :nth-child(7) { animation-delay: 240ms; }
-.stagger > .overflow-y-auto > :nth-child(n + 8) { animation-delay: 280ms; }
+.stagger > .overflow-y-auto > :nth-child(2) { animation-delay: 35ms; }
+.stagger > .overflow-y-auto > :nth-child(3) { animation-delay: 70ms; }
+.stagger > .overflow-y-auto > :nth-child(4) { animation-delay: 105ms; }
+.stagger > .overflow-y-auto > :nth-child(5) { animation-delay: 140ms; }
+.stagger > .overflow-y-auto > :nth-child(6) { animation-delay: 175ms; }
+.stagger > .overflow-y-auto > :nth-child(7) { animation-delay: 210ms; }
+.stagger > .overflow-y-auto > :nth-child(n + 8) { animation-delay: 245ms; }
+
+/* Scroll containers keep their bounce to themselves, and scroll on the GPU. */
+.overflow-y-auto {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Checklist tick: pops in with a little overshoot. */
+@keyframes tick-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.tick-pop {
+  animation: tick-pop 0.38s var(--ease-out-soft) both;
+}
 
 /* Bottom sheet: slides fully up on the iOS sheet curve; .sheet-leave plays it
    back down (Sheet.tsx waits for it before unmounting). */
@@ -475,8 +507,12 @@ h2 {
   .tab-pill {
     transition: none;
   }
-  .ring-tip {
+  .ring-tip,
+  .tick-pop {
     animation: none;
+  }
+  .app-shell {
+    transition: none;
   }
   .screen-enter,
   .screen-enter-right,

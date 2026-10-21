@@ -61,9 +61,10 @@ export default function App() {
   return (
     <div className="flex min-h-full justify-center bg-bg">
       {/* Phone-width column — one shared gradient backdrop (see .app-bg),
-          so it stays put while screens change on top of it. */}
+          so it stays put while screens change on top of it. .app-shell is
+          what shrinks back while a sheet is open. */}
       <div
-        className="app-bg relative flex h-dvh w-full max-w-[420px] flex-col overflow-hidden"
+        className="app-bg app-shell relative flex h-dvh w-full max-w-[420px] flex-col overflow-hidden"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <Header onOpenSettings={() => setSettingsOpen(true)} />
@@ -71,7 +72,7 @@ export default function App() {
         {/* Screen region — keyed remount so each screen slides in, its cards staggering up. */}
         <div
           key={screen}
-          className={`${dir === 'right' ? 'screen-enter-right' : 'screen-enter-left'} stagger fade-top flex min-h-0 flex-1 flex-col`}
+          className={`${dir === 'right' ? 'screen-enter-right' : 'screen-enter-left'} stagger flex min-h-0 flex-1 flex-col`}
         >
           {/* Sub-screens under More get a back link to the list. */}
           {isMoreScreen(screen) && (
