@@ -13,6 +13,8 @@ import Finance from './screens/Finance'
 import Social from './screens/Social'
 import Settings from './screens/Settings'
 import Assistant from './screens/Assistant'
+import More, { type MoreScreenId } from './screens/More'
+import { ChevronLeft } from 'lucide-react'
 import AssistantFab from './components/AssistantFab'
 import { useDailyNotifications } from './hooks/useDailyNotifications'
 import { useDailySnapshot } from './hooks/useDailySnapshot'
@@ -20,17 +22,30 @@ import { useSettings } from './settingsContext'
 
 /** Per-page ambient top glow — monochrome, varied position/strength per tab so
     switching tabs still cross-fades with a sense of motion. */
-const TAB_GRADIENTS: Record<TabId, string> = {
-  home: 'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(200,205,215,0.08), transparent 52%)',
+/** Every routable screen: the five tabs plus the screens nested under More. */
+type ScreenId = TabId | MoreScreenId
+
+const MORE_SCREENS: Record<MoreScreenId, true> = {
+  sleep: true,
+  energy: true,
+  motivation: true,
+  finance: true,
+  social: true,
+}
+
+const isMoreScreen = (id: ScreenId): id is MoreScreenId => id in MORE_SCREENS
+
+const TAB_GRADIENTS: Record<ScreenId, string> = {
+  today:'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(200,205,215,0.08), transparent 52%)',
   energy:
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(255,255,255,0.07), transparent 52%)',
   sleep:
     'radial-gradient(135% 100% at 85% -12%, rgba(211,214,221,0.12), transparent 55%), radial-gradient(120% 95% at 6% -6%, rgba(20,22,28,0.55), transparent 50%)',
-  training:
+  train:
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(154,160,171,0.08), transparent 52%)',
-  nutrition:
+  food:
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.09), transparent 52%), radial-gradient(90% 70% at 60% 0%, rgba(255,255,255,0.06), transparent 60%)',
-  journal:
+  plan:
     'radial-gradient(135% 100% at 85% -12%, rgba(199,203,212,0.11), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(58,63,74,0.30), transparent 52%)',
   motivation:
     'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.15), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.10), transparent 52%)',
@@ -38,10 +53,14 @@ const TAB_GRADIENTS: Record<TabId, string> = {
     'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(154,160,171,0.09), transparent 52%)',
   social:
     'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(199,203,212,0.09), transparent 52%)',
+  more:
+    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.08), transparent 52%)',
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('home')
+  const [screen, setScreen] = useState<ScreenId>('today')
+  // More's sub-screens keep the More tab highlighted.
+  const activeTab: TabId = isMoreScreen(screen) ? 'more' : screen
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const { settings, setSettings } = useSettings()
@@ -58,12 +77,12 @@ export default function App() {
       >
         {/* Ambient blue glow behind each page's header — one layer per tab so
             switching cross-fades (background-image itself can't transition). */}
-        {(Object.keys(TAB_GRADIENTS) as TabId[]).map((id) => (
+        {(Object.keys(TAB_GRADIENTS) as ScreenId[]).map((id) => (
           <div
             key={id}
             aria-hidden
             className={`pointer-events-none absolute inset-x-0 top-0 h-[360px] transition-opacity duration-500 ${
-              id === activeTab ? 'opacity-100' : 'opacity-0'
+              id === screen ? 'opacity-100' : 'opacity-0'
             }`}
             style={{
               background: TAB_GRADIENTS[id],
@@ -76,27 +95,39 @@ export default function App() {
         <Header onOpenSettings={() => setSettingsOpen(true)} />
 
         {/* Screen region — keyed remount so each tab springs in. */}
-        <div key={activeTab} className="screen-enter flex min-h-0 flex-1 flex-col">
-          {activeTab === 'home' ? (
-            <Home />
-          ) : activeTab === 'energy' ? (
-            <Energy />
-          ) : activeTab === 'sleep' ? (
-            <Sleep />
-          ) : activeTab === 'training' ? (
+        <div key={screen} className="screen-enter flex min-h-0 flex-1 flex-col">
+          {/* Sub-screens under More get a back link to the list. */}
+          {isMoreScreen(screen) && (
+            <button
+              type="button"
+              onClick={() => setScreen('more')}
+              className="press -mt-1 mb-1 flex items-center gap-0.5 self-start px-5 text-sm font-medium text-text-muted transition-colors hover:text-text"
+            >
+              <ChevronLeft size={18} strokeWidth={1.9} />
+              More
+            </button>
+          )}
+
+          {screen === 'today' ? (
+            <Home onOpenSleep={() => setScreen('sleep')} />
+          ) : screen === 'train' ? (
             <Training />
-          ) : activeTab === 'nutrition' ? (
+          ) : screen === 'food' ? (
             <Nutrition />
-          ) : activeTab === 'journal' ? (
+          ) : screen === 'plan' ? (
             <Journal />
-          ) : activeTab === 'motivation' ? (
+          ) : screen === 'more' ? (
+            <More onOpen={setScreen} onOpenSettings={() => setSettingsOpen(true)} />
+          ) : screen === 'sleep' ? (
+            <Sleep />
+          ) : screen === 'energy' ? (
+            <Energy />
+          ) : screen === 'motivation' ? (
             <Motivation />
-          ) : activeTab === 'finance' ? (
+          ) : screen === 'finance' ? (
             <Finance />
-          ) : activeTab === 'social' ? (
-            <Social />
           ) : (
-            <div className="flex-1 overflow-y-auto px-6" />
+            <Social />
           )}
         </div>
 
@@ -107,7 +138,7 @@ export default function App() {
           />
         )}
 
-        <TabBar active={activeTab} onChange={setActiveTab} />
+        <TabBar active={activeTab} onChange={setScreen} />
 
         {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
 

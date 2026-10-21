@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Footprints, Flame, Heart, Scale } from 'lucide-react'
+import { ChevronRight, Footprints, Flame, Heart, Scale } from 'lucide-react'
 import { user, formatToday, stats, activity, readinessVerdict, type Stat } from '../data'
 import { useHealth } from '../api/healthContext'
 import { useReadiness } from '../hooks/useReadiness'
@@ -31,7 +31,12 @@ function pctTrend(
   return { trend: `${Math.abs(pct)}%`, trendDir: pct >= 0 ? 'up' : 'down' }
 }
 
-export default function Home() {
+interface HomeProps {
+  /** Sleep moved under More — this links Today's sleep/recovery numbers to the full screen. */
+  onOpenSleep: () => void
+}
+
+export default function Home({ onOpenSleep }: HomeProps) {
   const { health, loading } = useHealth()
   const { settings } = useSettings()
   const [weightEntries, setWeightEntries] = useWeightLog()
@@ -129,6 +134,15 @@ export default function Home() {
             <StatTile key={stat.label} stat={stat} />
           ))}
         </div>
+
+        <button
+          type="button"
+          onClick={onOpenSleep}
+          className="press mx-auto mt-4 flex items-center gap-0.5 text-xs font-medium text-text-muted transition-colors hover:text-text"
+        >
+          Sleep details
+          <ChevronRight size={14} strokeWidth={1.9} />
+        </button>
       </div>
 
       {/* Daily activity + body weight */}

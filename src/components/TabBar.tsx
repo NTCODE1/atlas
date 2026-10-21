@@ -1,28 +1,17 @@
-import { AtSign, BookOpen, Dumbbell, Home, Moon, Sparkles, Utensils, Wallet, Zap } from 'lucide-react'
+import { CalendarDays, Dumbbell, House, LayoutGrid, Utensils } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
-export type TabId =
-  | 'home'
-  | 'energy'
-  | 'sleep'
-  | 'training'
-  | 'nutrition'
-  | 'journal'
-  | 'motivation'
-  | 'finance'
-  | 'social'
+/** The five primary destinations. Everything else (Sleep, Energy, Motivation,
+ *  Finance, Social) lives one level down under More — see screens/More.tsx. */
+export type TabId = 'today' | 'train' | 'food' | 'plan' | 'more'
 
 const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'energy', label: 'Energy', icon: Zap },
-  { id: 'sleep', label: 'Sleep', icon: Moon },
-  { id: 'training', label: 'Training', icon: Dumbbell },
-  { id: 'nutrition', label: 'Nutrition', icon: Utensils },
-  { id: 'journal', label: 'Journal', icon: BookOpen },
-  { id: 'motivation', label: 'Motivation', icon: Sparkles },
-  { id: 'finance', label: 'Finance', icon: Wallet },
-  { id: 'social', label: 'Social', icon: AtSign },
+  { id: 'today', label: 'Today', icon: House },
+  { id: 'train', label: 'Train', icon: Dumbbell },
+  { id: 'food', label: 'Food', icon: Utensils },
+  { id: 'plan', label: 'Plan', icon: CalendarDays },
+  { id: 'more', label: 'More', icon: LayoutGrid },
 ]
 
 interface TabBarProps {
@@ -38,7 +27,7 @@ interface PillRect {
 }
 
 /**
- * Floating iOS "liquid glass" bottom nav with 9 destinations. Icon-only and
+ * Floating iOS "liquid glass" bottom nav with 5 destinations. Icon-only and
  * fully capsule-shaped (both the outer bar and the active-tab highlight use
  * rounded-full), matching Apple's actual Liquid Glass tab bar silhouette
  * rather than a rounded rectangle with labels. A single glass pill glides
@@ -62,18 +51,13 @@ export default function TabBar({ active, onChange }: TabBarProps) {
     return () => window.removeEventListener('resize', measure)
   }, [active])
 
-  // With 9 tabs the bar scrolls; keep the active one in view.
-  useEffect(() => {
-    btnRefs.current.get(active)?.scrollIntoView({ inline: 'center', block: 'nearest' })
-  }, [active])
-
   return (
     <nav
       className="pointer-events-none absolute inset-x-0 bottom-0 z-40"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="tabbar-glass pointer-events-auto relative mx-3 mb-3 overflow-hidden rounded-full">
-        <ul ref={listRef} className="relative flex items-center overflow-x-auto no-scrollbar px-2 py-2">
+        <ul ref={listRef} className="relative flex items-center px-2 py-2">
           {/* Gliding liquid-glass pill behind the active tab. z-0 keeps it under
               the buttons (which are relative z-10). Kept a direct child of <ul>
               so offsetLeft/Top measure against the same box the pill sits in. */}
@@ -91,7 +75,8 @@ export default function TabBar({ active, onChange }: TabBarProps) {
               // NOTE: <li> must stay non-positioned so the button's offsetParent
               // is the <ul> — the pill's measurement reference. Layering is on
               // the button (relative z-10) instead.
-              <li key={id} className="w-11 shrink-0">
+              // Equal shares so five tabs spread across the full bar.
+              <li key={id} className="flex flex-1 justify-center">
                 <button
                   ref={(el) => {
                     if (el) btnRefs.current.set(id, el)

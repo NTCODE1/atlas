@@ -9,6 +9,8 @@ import QuickAddBar from '../components/journal/QuickAddBar'
 import DayViewSheet from '../components/journal/DayViewSheet'
 import HabitTracker from '../components/journal/HabitTracker'
 import { effectiveIcon } from '../components/journal/activityIcons'
+import FocusCard from '../components/home/FocusCard'
+import ProgressTile from '../components/home/ProgressTile'
 
 const FILTERS = ['All', ...ENTRY_TAGS]
 
@@ -58,6 +60,15 @@ export default function Journal() {
           >
             <ChevronRight size={18} strokeWidth={2} />
           </button>
+        </div>
+      </div>
+
+      {/* Focus — today's chosen task + the deep-work timer. Same synced state
+          as the Today screen's copies, so either one stays in step. */}
+      <div className="mt-4 flex flex-col gap-3">
+        <FocusCard />
+        <div className="flex">
+          <ProgressTile />
         </div>
       </div>
 
