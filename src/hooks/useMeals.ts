@@ -11,6 +11,9 @@ export type MealMacros = Partial<Pick<MacroTotals, 'kcal' | 'protein' | 'carbs' 
   micros?: MicroAmounts
 }
 
+/** How long logged meals are kept, in days. */
+export const MEAL_HISTORY_DAYS = 365
+
 /**
  * Meal persistence, mirroring useWorkouts: a localStorage-backed list plus
  * add/delete helpers and a `todayMeals` view. Meals are date-stamped so the
@@ -21,10 +24,11 @@ export type MealMacros = Partial<Pick<MacroTotals, 'kcal' | 'protein' | 'carbs' 
 export function useMeals() {
   const [meals, setMeals] = useSyncedStorage<Meal[]>('atlas.nutrition.meals', [], 'meals')
 
-  // Meals are a short daily log (only "today" is ever shown) — drop entries
-  // older than 7 days rather than keeping them forever.
+  // Meals feed the Nutrition history (reviewed with the coach), so keep a
+  // year — not the 7 days other raw daily logs get. Still bounded, because
+  // the whole list is pushed on every sync.
   useEffect(() => {
-    setMeals((prev) => pruneByDate(prev, todayISO()))
+    setMeals((prev) => pruneByDate(prev, todayISO(), MEAL_HISTORY_DAYS))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

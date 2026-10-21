@@ -20,8 +20,12 @@ export { RAW_RETENTION_DAYS }
  * their age by. Returns the same array reference when nothing was pruned, so
  * callers can skip a no-op write.
  */
-export function pruneByDate<T extends { date?: string }>(items: T[], today: string): T[] {
-  const cutoff = cutoffDateISO(today, RAW_RETENTION_DAYS)
+export function pruneByDate<T extends { date?: string }>(
+  items: T[],
+  today: string,
+  keepDays: number = RAW_RETENTION_DAYS,
+): T[] {
+  const cutoff = cutoffDateISO(today, keepDays)
   const pruned = items.filter((i) => i.date == null || i.date >= cutoff)
   return pruned.length === items.length ? items : pruned
 }

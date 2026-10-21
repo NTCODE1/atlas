@@ -1,4 +1,5 @@
 import { kgToDisplay, type WeightUnit } from './settings'
+import { cutoffDateISO } from './dailySnapshot'
 
 export interface WeightEntry {
   /** YYYY-MM-DD — one entry per date, later logs overwrite. */
@@ -26,10 +27,7 @@ export function dailyWeights(entries: WeightEntry[], scaleByDate: Record<string,
 
 /** Mean of the weights in the 7 days ending `endDate` (inclusive), or null if none. */
 export function sevenDayAverage(series: WeightEntry[], endDate: string): number | null {
-  const end = new Date(`${endDate}T00:00:00`)
-  const start = new Date(end)
-  start.setDate(start.getDate() - 6)
-  const from = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`
+  const from = cutoffDateISO(endDate, 6)
   const inWindow = series.filter((e) => e.date >= from && e.date <= endDate)
   if (inWindow.length === 0) return null
   return inWindow.reduce((sum, e) => sum + e.kg, 0) / inWindow.length

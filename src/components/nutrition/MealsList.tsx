@@ -5,19 +5,22 @@ import { MEAL_META } from './mealMeta'
 interface MealsListProps {
   meals: Meal[]
   onDelete?: (id: string) => void
+  /** Opens the nutrition history ("View all"). */
+  onViewAll?: () => void
 }
 
 /** "Today's Meals" card — logged meals with icon, name, calories, delete. */
-export default function MealsList({ meals, onDelete }: MealsListProps) {
+export default function MealsList({ meals, onDelete, onViewAll }: MealsListProps) {
   return (
     <div className="glass rounded-3xl px-5 py-5">
       <div className="flex items-center justify-between">
         <span className="font-display text-lg font-semibold text-text">Today&apos;s Meals</span>
         <button
           type="button"
-          className="flex items-center gap-0.5 text-sm text-text-muted transition-colors hover:text-text"
+          onClick={onViewAll}
+          className="press flex items-center gap-0.5 text-sm text-text-muted transition-colors hover:text-text"
         >
-          View all
+          History
           <ChevronRight size={15} strokeWidth={2} />
         </button>
       </div>

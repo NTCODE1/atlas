@@ -124,11 +124,18 @@ export function minutesFromNoon(hhmm: string): number | null {
   return ((raw % 1440) + 1440) % 1440
 }
 
-/** YYYY-MM-DD `windowDays` before `today`. */
+/**
+ * YYYY-MM-DD `windowDays` before `today`, in local time. Formatted from the
+ * local date parts — not toISOString(), which converts local midnight to UTC
+ * and, east of Greenwich (Finland is UTC+2/+3), lands on the previous day,
+ * making every window one day too long.
+ */
 export function cutoffDateISO(today: string, windowDays: number): string {
   const cutoff = new Date(`${today}T00:00:00`)
   cutoff.setDate(cutoff.getDate() - windowDays)
-  return cutoff.toISOString().slice(0, 10)
+  const m = String(cutoff.getMonth() + 1).padStart(2, '0')
+  const d = String(cutoff.getDate()).padStart(2, '0')
+  return `${cutoff.getFullYear()}-${m}-${d}`
 }
 
 /** Days strictly before `today`, most-recent-first, within the last `windowDays`. */

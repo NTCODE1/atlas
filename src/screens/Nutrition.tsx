@@ -1,4 +1,7 @@
-import { Flame } from 'lucide-react'
+import { useState } from 'react'
+import { CalendarDays, Flame } from 'lucide-react'
+import ActionButton from '../components/ui/ActionButton'
+import NutritionHistorySheet from '../components/nutrition/NutritionHistorySheet'
 import Card from '../components/ui/Card'
 import PageHeader from '../components/ui/PageHeader'
 import ProgressBar from '../components/ui/ProgressBar'
@@ -32,6 +35,7 @@ export default function Nutrition() {
   const { todayMeals, addMeal, deleteMeal } = useMeals()
   const { todaySupplements, addSupplement, deleteSupplement } = useSupplements()
   const { targets } = useNutritionTargets()
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const totals = mealTotals(todayMeals)
   const microTotals = sumMicros([
@@ -96,8 +100,18 @@ export default function Nutrition() {
 
       {/* Today's meals */}
       <div className="mt-4">
-        <MealsList meals={todayMeals} onDelete={deleteMeal} />
+        <MealsList meals={todayMeals} onDelete={deleteMeal} onViewAll={() => setHistoryOpen(true)} />
       </div>
+
+      {/* History — day-by-day intake to review / share with the coach */}
+      <div className="mt-3">
+        <ActionButton
+          icon={<CalendarDays size={18} strokeWidth={1.75} />}
+          label="Nutrition history"
+          onClick={() => setHistoryOpen(true)}
+        />
+      </div>
+      {historyOpen && <NutritionHistorySheet onClose={() => setHistoryOpen(false)} />}
 
       {/* Hydration tracking bar */}
       <HydrationTracker />
