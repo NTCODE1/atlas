@@ -3,6 +3,7 @@ import { useHealth } from '../api/healthContext'
 import { useLocalStorage } from './useLocalStorage'
 import { useSyncedStorage } from './useSyncedStorage'
 import { useWorkouts } from './useWorkouts'
+import { useActivities } from './useActivities'
 import { useWatchWorkouts } from '../api/workoutContext'
 import { useReadiness } from './useReadiness'
 import { activity, hydration } from '../data'
@@ -40,6 +41,7 @@ export function useDailySnapshot(): void {
   // metric, not what the Energy screen actually logs.
   const [caffeineDoses] = useLocalStorage<CaffeineDose[]>('atlas.caffeine.doses', [])
   const { sessions } = useWorkouts()
+  const { activities } = useActivities()
   const { workouts } = useWatchWorkouts()
   const { sleepScore, readiness } = useReadiness()
 
@@ -75,7 +77,7 @@ export function useDailySnapshot(): void {
       sleepRemMinutes: health.sleepRemMinutes ?? undefined,
       sleepAwakeMinutes: health.sleepAwakeMinutes ?? undefined,
       bedtimeMinutes,
-      trainingLoad: dailyTrainingLoad(sessions, workouts, today),
+      trainingLoad: dailyTrainingLoad(sessions, workouts, today, activities),
     }
 
     // Merge today's snapshot in, then enforce retention: full records past 7
@@ -84,5 +86,5 @@ export function useDailySnapshot(): void {
     setStore((prev) => pruneSnapshotStore(upsertToday(prev, snap), today))
     // Re-run when the health payload settles, today's weight/caffeine changes,
     // or today's training/readiness inputs change.
-  }, [loading, health, weightEntries, caffeineDoses, sessions, workouts, sleepScore, readiness, setStore])
+  }, [loading, health, weightEntries, caffeineDoses, sessions, workouts, activities, sleepScore, readiness, setStore])
 }

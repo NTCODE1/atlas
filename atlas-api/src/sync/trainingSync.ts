@@ -229,9 +229,89 @@ export const vo2maxEntriesSync: DomainSync<Vo2MaxEntryValue[]> = {
   },
 };
 
+// --- Activity sessions (ski / trampoline / cardio) -------------------------
+// src/activities.ts's ActivitySession — flat, one row each (migrations/0004).
+
+interface ActivityRow {
+  id: string;
+  date: string;
+  kind: string;
+  focus: string | null;
+  start_time: string | null;
+  duration_minutes: number;
+  rpe: number | null;
+  runs: number | null;
+  distance_km: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ActivitySessionValue {
+  id: string;
+  date: string;
+  kind: string;
+  focus?: string | null;
+  startTime?: string | null;
+  durationMinutes: number;
+  rpe?: number | null;
+  runs?: number | null;
+  distanceKm?: number | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export const activitySessionsSync: DomainSync<ActivitySessionValue[]> = {
+  empty: [],
+  apply(db, sessions) {
+    const stmts: D1PreparedStatement[] = [db.prepare("DELETE FROM activity_sessions")];
+    for (const s of sessions) {
+      stmts.push(
+        db
+          .prepare(
+            "INSERT OR REPLACE INTO activity_sessions (id, date, kind, focus, start_time, duration_minutes, rpe, runs, distance_km, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          )
+          .bind(
+            s.id,
+            s.date,
+            s.kind,
+            s.focus ?? null,
+            s.startTime ?? null,
+            s.durationMinutes,
+            s.rpe ?? null,
+            s.runs ?? null,
+            s.distanceKm ?? null,
+            s.notes ?? null,
+            s.createdAt,
+            Date.now(),
+          ),
+      );
+    }
+    return stmts;
+  },
+  async read(db) {
+    const { results } = await db
+      .prepare("SELECT * FROM activity_sessions ORDER BY date, created_at")
+      .all<ActivityRow>();
+    return results.map((r) => ({
+      id: r.id,
+      date: r.date,
+      kind: r.kind,
+      focus: r.focus,
+      startTime: r.start_time,
+      durationMinutes: r.duration_minutes,
+      rpe: r.rpe,
+      runs: r.runs,
+      distanceKm: r.distance_km,
+      notes: r.notes,
+      createdAt: r.created_at,
+    }));
+  },
+};
+
 /** Registered under these exact names — must match the frontend's useSyncedStorage domain arguments. */
 export const TRAINING_SYNC_REGISTRY: Record<string, DomainSync<unknown>> = {
   exercises: exercisesSync as DomainSync<unknown>,
   workoutSessions: workoutSessionsSync as DomainSync<unknown>,
   vo2maxEntries: vo2maxEntriesSync as DomainSync<unknown>,
+  activitySessions: activitySessionsSync as DomainSync<unknown>,
 };

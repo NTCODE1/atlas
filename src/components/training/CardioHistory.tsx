@@ -10,9 +10,14 @@ const WORKOUT_TYPE_ICON: Record<WorkoutType, IconId> = {
   bike: 'bike',
   swim: 'swim',
   hike: 'hike',
+  // No ski glyph in the shared icon set — the mountain reads right for it.
+  ski: 'hike',
   strength: 'strength',
   other: 'strength',
 }
+
+/** Row label overrides where the borrowed icon's own label would be wrong. */
+const WORKOUT_TYPE_LABEL: Partial<Record<WorkoutType, string>> = { ski: 'Skiing' }
 
 const formatDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, {
@@ -54,7 +59,7 @@ export default function CardioHistory({ workouts }: CardioHistoryProps) {
             </div>
             <div className="min-w-0 flex-1">
               <span className="block text-sm font-semibold text-text">
-                {ICON_LABEL[icon]} · {formatDate(workout.date)}
+                {WORKOUT_TYPE_LABEL[workout.type] ?? ICON_LABEL[icon]} · {formatDate(workout.date)}
                 {workout.startTime ? ` · ${workout.startTime}` : ''}
               </span>
               <span className="text-xs text-text-muted">

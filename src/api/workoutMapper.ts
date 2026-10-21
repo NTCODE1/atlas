@@ -26,7 +26,7 @@
 import { parseHaeDate, hhmmLocal } from './healthMapper'
 import type { TrainingDay } from '../data'
 
-export type WorkoutType = 'run' | 'bike' | 'swim' | 'hike' | 'strength' | 'other'
+export type WorkoutType = 'run' | 'bike' | 'swim' | 'hike' | 'ski' | 'strength' | 'other'
 
 export interface Workout {
   id: string
@@ -74,6 +74,9 @@ function firstQty(obj: Record<string, unknown>, keys: string[]): number | null {
 /** Classify an HAE workout name/type string into a coarse WorkoutType for icon lookup. */
 function classifyType(name: string | null): WorkoutType {
   const s = (name ?? '').toLowerCase()
+  // Before "run": COROS/Apple name ski days "Downhill Skiing", "Snow Sports",
+  // "Snowboarding", and a ski run must not be mistaken for running.
+  if (/ski|snow/.test(s)) return 'ski'
   if (/run/.test(s)) return 'run'
   if (/cycl|bike/.test(s)) return 'bike'
   if (/swim/.test(s)) return 'swim'

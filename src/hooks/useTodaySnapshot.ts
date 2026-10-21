@@ -9,6 +9,7 @@ import { useNutritionTargets } from '../nutritionTargets'
 import { useMeals } from './useMeals'
 import { useHydration, HYDRATION_GOAL_L } from './useHydration'
 import { useWorkouts } from './useWorkouts'
+import { useActivities } from './useActivities'
 import { useSupplements } from './useSupplements'
 import { readJournalDay, sortEntriesByTime } from './useJournalMonth'
 import { useLocalStorage } from './useLocalStorage'
@@ -54,7 +55,12 @@ export interface TodaySnapshot {
   activity: { steps: number | null; activeKcal: number | null; avgHr: number | null }
   caffeine: { totalMg: number; doses: { drink: string; time: string; mg: number }[] }
   hydration: { litres: number; goalL: number; drinks: number }
-  training: { loggedToday: boolean; loadKg: number; exercises: { name: string; sets: number }[] }
+  training: {
+    loggedToday: boolean
+    sessions: { type: string; focus: string | null; minutes: number; rpe: number | null; notes: string | null }[]
+    loadKg: number
+    exercises: { name: string; sets: number }[]
+  }
   nutrition: {
     meals: {
       type: string
@@ -90,6 +96,7 @@ export function useTodaySnapshot(): TodaySnapshot {
   const { todaySupplements } = useSupplements()
   const { totalMl, todayDrinks } = useHydration()
   const { todaySessions } = useWorkouts()
+  const { activities } = useActivities()
   const { targets } = useNutritionTargets()
   const [caffeineDoses] = useLocalStorage<CaffeineDose[]>('atlas.caffeine.doses', [])
   const [weightEntries] = useLocalStorage<WeightEntry[]>('atlas.weight.entries', [])
@@ -102,6 +109,7 @@ export function useTodaySnapshot(): TodaySnapshot {
     const caffeineTotal = todayCaffeineDoses.reduce((sum, d) => sum + (d.mg ?? 0), 0)
 
     const today = todayISO()
+    const todayActivities = activities.filter((a) => a.date === today)
     const recentCutoff = cutoffDateISO(today, 7)
     const recentDays = snapshotList(snapshotStore)
       .filter((s) => s.date < today && s.date >= recentCutoff)
@@ -193,7 +201,15 @@ export function useTodaySnapshot(): TodaySnapshot {
         drinks: todayDrinks.length,
       },
       training: {
-        loggedToday: todaySessions.length > 0,
+        loggedToday: todaySessions.length > 0 || todayActivities.length > 0,
+        // Ski / trampoline / cardio sessions, so the AI can talk about the real day.
+        sessions: todayActivities.map((a) => ({
+          type: a.kind,
+          focus: a.focus ?? null,
+          minutes: a.durationMinutes,
+          rpe: a.rpe ?? null,
+          notes: a.notes ?? null,
+        })),
         loadKg: Math.round(todaySessions.reduce((sum, s) => sum + sessionVolume(s), 0)),
         exercises: todaySessions.flatMap((s) =>
           s.exercises.map((ex) => ({ name: ex.exerciseName, sets: ex.sets.length })),
@@ -235,6 +251,7 @@ export function useTodaySnapshot(): TodaySnapshot {
     totalMl,
     todayDrinks,
     todaySessions,
+    activities,
     targets,
     snapshotStore,
   ])

@@ -11,7 +11,7 @@ import { test, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { getPlatformProxy } from "wrangler";
 import { pushDomain, pullDomain, type SyncEnv } from "../sync.ts";
-import { exercisesSync, workoutSessionsSync, vo2maxEntriesSync } from "./trainingSync.ts";
+import { exercisesSync, workoutSessionsSync, vo2maxEntriesSync, activitySessionsSync } from "./trainingSync.ts";
 import { financeSync } from "./financeSync.ts";
 import { motivationItemsSync, goalsSync } from "./motivationSync.ts";
 import { dailySnapshotsSync } from "./snapshotSync.ts";
@@ -38,6 +38,7 @@ beforeEach(async () => {
     env.DB.prepare("DELETE FROM workout_sessions"),
     env.DB.prepare("DELETE FROM exercises"),
     env.DB.prepare("DELETE FROM vo2max_entries"),
+    env.DB.prepare("DELETE FROM activity_sessions"),
     env.DB.prepare("DELETE FROM finance_assets"),
     env.DB.prepare("DELETE FROM finance_liabilities"),
     env.DB.prepare("DELETE FROM finance_expenses"),
@@ -113,6 +114,40 @@ test("vo2max entries round-trip, one per date", async () => {
   await pushDomain(env, "vo2maxEntries", vo2maxEntriesSync, [{ date: "2026-08-20", value: 48.5 }], 1000);
   const { value } = await pullDomain(env, "vo2maxEntries", vo2maxEntriesSync);
   assert.deepEqual(value, [{ date: "2026-08-20", value: 48.5 }]);
+});
+
+test("activity sessions round-trip, nullable per-kind fields kept as null", async () => {
+  const sessions = [
+    {
+      id: "a1",
+      date: "2026-10-26",
+      kind: "ski",
+      focus: "Slopestyle",
+      startTime: "09:00",
+      durationMinutes: 180,
+      rpe: 7,
+      runs: 14,
+      distanceKm: null,
+      notes: "Landed switch 7",
+      createdAt: "2026-10-26T12:10:00.000Z",
+    },
+    {
+      id: "a2",
+      date: "2026-10-26",
+      kind: "cardio",
+      focus: "Bike intervals",
+      startTime: null,
+      durationMinutes: 45,
+      rpe: 8,
+      runs: null,
+      distanceKm: 18.5,
+      notes: null,
+      createdAt: "2026-10-26T19:00:00.000Z",
+    },
+  ];
+  await pushDomain(env, "activitySessions", activitySessionsSync, sessions, 1000);
+  const { value } = await pullDomain(env, "activitySessions", activitySessionsSync);
+  assert.deepEqual(value, sessions);
 });
 
 // --- Finance --------------------------------------------------------------

@@ -7,6 +7,7 @@
 
 import { sessionVolume, sessionCardioMinutes, type WorkoutSession } from './workouts'
 import type { Workout } from './api/workoutMapper'
+import type { ActivitySession } from './activities'
 
 export interface DailySnapshot {
   /** YYYY-MM-DD */
@@ -204,12 +205,20 @@ export function dailyTrainingLoad(
   sessions: WorkoutSession[],
   workouts: Workout[],
   date: string,
+  activities: ActivitySession[] = [],
 ): number {
   const todaySessions = sessions.filter((s) => s.date === date)
   const gymLoad = todaySessions.reduce((sum, s) => sum + sessionVolume(s) / 100, 0)
   const manualCardioLoad = todaySessions.reduce((sum, s) => sum + sessionCardioMinutes(s), 0)
+  // Hand-logged ski/trampoline/cardio: minutes, same 1 min ≈ 1 point scale.
+  const todayActivities = activities.filter((a) => a.date === date)
+  const activityLoad = todayActivities.reduce((sum, a) => sum + a.durationMinutes, 0)
+  // Skip watch workouts a hand-logged session already covers (the same ski
+  // day recorded by COROS and logged with RPE), so it isn't counted twice.
+  const loggedKinds = new Set(todayActivities.map((a) => a.kind))
   const watchCardioLoad = workouts
     .filter((w) => w.date === date)
+    .filter((w) => !(w.type === 'ski' ? loggedKinds.has('ski') : ['run', 'bike', 'swim'].includes(w.type) && loggedKinds.has('cardio')))
     .reduce((sum, w) => sum + (w.durationMinutes ?? 0), 0)
-  return gymLoad + manualCardioLoad + watchCardioLoad
+  return gymLoad + manualCardioLoad + activityLoad + watchCardioLoad
 }
