@@ -43,7 +43,7 @@ export default function Header({ onOpenSettings }: HeaderProps) {
           type="button"
           onClick={toggleNotifications}
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-          className="press relative grid h-10 w-10 place-items-center rounded-full text-text transition-colors hover:bg-surface"
+          className="press tabbar-glass liquid-rim relative grid h-10 w-10 place-items-center rounded-full text-text"
         >
           <Bell size={22} strokeWidth={1.75} />
           {unreadCount > 0 && (
@@ -56,7 +56,7 @@ export default function Header({ onOpenSettings }: HeaderProps) {
           type="button"
           onClick={onOpenSettings}
           aria-label="Settings"
-          className="press grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-border-strong bg-fill"
+          className="press tabbar-glass liquid-rim relative grid h-10 w-10 place-items-center overflow-hidden rounded-full"
         >
           {avatar ? (
             <img src={avatar} alt="" className="h-full w-full object-cover" />

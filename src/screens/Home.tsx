@@ -84,9 +84,9 @@ export default function Home({ onOpenSleep, onOpenBody, onQuickAdd }: HomeProps)
             type="button"
             onClick={() => setQuickAddOpen(true)}
             aria-label="Quick add"
-            className="press grid h-11 w-11 place-items-center rounded-full bg-accent-bright text-bg shadow-[0_0_18px_rgba(255,255,255,0.2)]"
+            className="press tabbar-glass liquid-rim relative grid h-11 w-11 place-items-center rounded-full text-accent-bright"
           >
-            <Plus size={22} strokeWidth={2.2} />
+            <Plus size={22} strokeWidth={2.2} className="drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]" />
           </button>
         }
       />

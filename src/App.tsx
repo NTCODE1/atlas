@@ -78,9 +78,9 @@ export default function App() {
             <button
               type="button"
               onClick={() => setScreen('more')}
-              className="press -mt-1 mb-1 flex items-center gap-0.5 self-start px-5 text-sm font-medium text-text-muted transition-colors hover:text-text"
+              className="press tabbar-glass liquid-rim relative -mt-1 mb-2 ml-5 flex items-center gap-0.5 self-start rounded-full py-1.5 pl-2 pr-3.5 text-sm font-medium text-text"
             >
-              <ChevronLeft size={18} strokeWidth={1.9} />
+              <ChevronLeft size={17} strokeWidth={2} />
               More
             </button>
           )}

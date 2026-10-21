@@ -29,7 +29,7 @@ export default function SegmentedControl<T extends string>({
   }, [value])
 
   return (
-    <div className="glass-subtle relative flex gap-1 rounded-full p-1">
+    <div className="tabbar-glass liquid-rim relative flex gap-1 rounded-full p-1">
       {pill && (
         <div
           aria-hidden

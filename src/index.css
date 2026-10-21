@@ -59,11 +59,19 @@
 
 /* App background: a soft grey light pooling at the top, falling off to
    near-black — the mockup's backdrop. Fixed to the phone column (App.tsx). */
+/* The middle four layers are soft light pools down the backdrop, so the glass
+   cards have something to blur and refract as they scroll over it (glass over
+   flat black just reads as grey). Static on purpose — animating what's behind
+   6+ blurred cards would force a re-blur every frame. */
 .app-bg {
   background-color: var(--color-bg);
   background-image:
     radial-gradient(130% 60% at 50% -12%, rgba(255, 255, 255, 0.16), transparent 62%),
     radial-gradient(90% 45% at 85% 0%, rgba(210, 212, 220, 0.06), transparent 60%),
+    radial-gradient(38% 22% at 12% 30%, rgba(255, 255, 255, 0.09), transparent 70%),
+    radial-gradient(42% 24% at 92% 52%, rgba(214, 218, 228, 0.08), transparent 70%),
+    radial-gradient(46% 22% at 20% 78%, rgba(255, 255, 255, 0.06), transparent 70%),
+    radial-gradient(36% 18% at 80% 96%, rgba(220, 222, 230, 0.05), transparent 70%),
     linear-gradient(180deg, #17181b 0%, #0e0f11 38%, #070708 100%);
 }
 
@@ -144,33 +152,61 @@ h2 {
    Radius is left to rounded-* utilities. The class names predate the redesign
    and are kept so every existing screen picks up the new look at once.
 --------------------------------------------------------------------------- */
+/* Frosted liquid-glass card: translucent, blurring and saturating the light
+   pools in the backdrop (.app-bg) as you scroll over them. The rim is drawn
+   with inset shadows rather than a pseudo-element so any element can wear
+   .glass without needing `position: relative`: bright top edge (light
+   catching the curve), fainter sides, a whisper of light at the bottom. */
 .glass,
 .card-grad,
 .card-grad-glass {
-  background-color: var(--color-surface);
-  /* Soft light falling on the top edge, fading into graphite. */
+  background-color: rgba(28, 29, 33, 0.48);
   background-image:
-    radial-gradient(120% 60% at 50% -8%, rgba(255, 255, 255, 0.06), transparent 62%),
-    linear-gradient(180deg, #1b1c20 0%, #141518 100%);
-  border: 1px solid var(--color-border);
+    radial-gradient(120% 60% at 30% -10%, rgba(255, 255, 255, 0.09), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01) 60%, rgba(255, 255, 255, 0.025));
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 10px 30px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.2),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset -1px 0 0 rgba(255, 255, 255, 0.03),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 14px 36px rgba(0, 0, 0, 0.38);
 }
 
-/* Hero card — a touch more light from above. */
+/* Hero card — more light pooled at the top, a stronger rim. */
 .card-grad-glass {
+  background-color: rgba(30, 31, 36, 0.5);
   background-image:
-    radial-gradient(110% 55% at 50% -6%, rgba(255, 255, 255, 0.09), transparent 64%),
-    linear-gradient(180deg, #1d1e22 0%, #131417 100%);
+    radial-gradient(110% 55% at 50% -12%, rgba(255, 255, 255, 0.14), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 55%, rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 18px 44px rgba(0, 0, 0, 0.42);
 }
 
-/* Nested tiles/rows inside a card. */
+/* Nested tiles/rows inside a card — clear glass, no extra blur (the parent
+   already blurs; blur-in-blur is expensive and looks muddy). */
 .glass-subtle {
-  background-color: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.045);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 70%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Without backdrop-filter, translucent cards would ghost — go near-opaque. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .card-grad,
+  .card-grad-glass {
+    background-color: rgba(26, 27, 31, 0.97);
+  }
 }
 
 /* Sheets and overlays — the one place real glass remains. */
