@@ -35,33 +35,6 @@ const MORE_SCREENS: Record<MoreScreenId, true> = {
 
 const isMoreScreen = (id: ScreenId): id is MoreScreenId => id in MORE_SCREENS
 
-/** Per-page ambient top glow — monochrome, varied position/strength per screen
-    so switching still cross-fades with a sense of motion. */
-const TAB_GRADIENTS: Record<ScreenId, string> = {
-  today:
-    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(200,205,215,0.08), transparent 52%)',
-  body:
-    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(199,203,212,0.08), transparent 52%)',
-  energy:
-    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(255,255,255,0.07), transparent 52%)',
-  sleep:
-    'radial-gradient(135% 100% at 85% -12%, rgba(211,214,221,0.12), transparent 55%), radial-gradient(120% 95% at 6% -6%, rgba(20,22,28,0.55), transparent 50%)',
-  train:
-    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(154,160,171,0.08), transparent 52%)',
-  food:
-    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.14), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.09), transparent 52%), radial-gradient(90% 70% at 60% 0%, rgba(255,255,255,0.06), transparent 60%)',
-  plan:
-    'radial-gradient(135% 100% at 85% -12%, rgba(199,203,212,0.11), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(58,63,74,0.30), transparent 52%)',
-  motivation:
-    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.15), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.10), transparent 52%)',
-  finance:
-    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(154,160,171,0.09), transparent 52%)',
-  social:
-    'radial-gradient(135% 100% at 85% -12%, rgba(255,255,255,0.13), transparent 55%), radial-gradient(120% 95% at 6% -4%, rgba(199,203,212,0.09), transparent 52%)',
-  more:
-    'radial-gradient(135% 100% at 88% -12%, rgba(255,255,255,0.12), transparent 55%), radial-gradient(120% 95% at 4% -4%, rgba(199,203,212,0.08), transparent 52%)',
-}
-
 export default function App() {
   const [screen, setScreen] = useState<ScreenId>('today')
   // More's sub-screens keep the More tab highlighted.
@@ -75,28 +48,12 @@ export default function App() {
 
   return (
     <div className="flex min-h-full justify-center bg-bg">
-      {/* Phone-width column */}
+      {/* Phone-width column — one shared gradient backdrop (see .app-bg),
+          so it stays put while screens change on top of it. */}
       <div
-        className="relative flex h-dvh w-full max-w-[420px] flex-col overflow-hidden bg-bg"
+        className="app-bg relative flex h-dvh w-full max-w-[420px] flex-col overflow-hidden"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {/* Ambient blue glow behind each page's header — one layer per tab so
-            switching cross-fades (background-image itself can't transition). */}
-        {(Object.keys(TAB_GRADIENTS) as ScreenId[]).map((id) => (
-          <div
-            key={id}
-            aria-hidden
-            className={`pointer-events-none absolute inset-x-0 top-0 h-[360px] transition-opacity duration-500 ${
-              id === screen ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{
-              background: TAB_GRADIENTS[id],
-              maskImage: 'linear-gradient(to bottom, black 50%, transparent)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent)',
-            }}
-          />
-        ))}
-
         <Header onOpenSettings={() => setSettingsOpen(true)} />
 
         {/* Screen region — keyed remount so each tab springs in. */}

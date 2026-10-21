@@ -47,10 +47,22 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Type — Inter throughout; "display" is the same face, used light for
-     titles and semibold for numbers (see the mockup's "Good morning, Niila"). */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Type — Apple's SF Pro on iPhone/Mac (what the mockup is drawn in: SF
+     Display at large sizes, SF Text small, chosen automatically by the
+     system), Inter as the web-font fallback everywhere else. "display" is
+     the same family, used light for titles and semibold for numbers. */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+}
+
+/* App background: a soft grey light pooling at the top, falling off to
+   near-black — the mockup's backdrop. Fixed to the phone column (App.tsx). */
+.app-bg {
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(130% 60% at 50% -12%, rgba(255, 255, 255, 0.16), transparent 62%),
+    radial-gradient(90% 45% at 85% 0%, rgba(210, 212, 220, 0.06), transparent 60%),
+    linear-gradient(180deg, #17181b 0%, #0e0f11 38%, #070708 100%);
 }
 
 /* Scrollable screens leave room for the floating nav + assistant button. */
@@ -73,10 +85,28 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-feature-settings: 'cv11', 'ss01';
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Premium type pass, applied app-wide without touching every component:
+   - display text (titles, big numbers) tracks tighter, like SF Display;
+   - the old heavy `font-display font-bold` numbers ease to semibold — bold
+     at 40px+ reads loud; semibold reads expensive;
+   - numbers line up (tabular figures) so values don't jitter as they count.
+   Unlayered, so these win over Tailwind's layered utilities. */
+.font-display {
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+.font-display.font-bold {
+  font-weight: 600;
+}
+h1,
+h2 {
+  letter-spacing: -0.022em;
 }
 
 /* Hairline border helper */
